@@ -47,7 +47,18 @@ export function AuroraFooter({ content, now }: { content: EventContent; now: Dat
               className="-mx-2 md:justify-end"
             />
 
-            <p className="text-aurora-fog/60 text-xs">{`© ${now.getFullYear()} ${displayName}`}</p>
+            {/*
+              `/70`, not `/60`. At 12px this is the smallest text on the page,
+              and `fog/60` over the near-black background composites to #676972
+              — 3.68:1, under the 4.5:1 AA minimum (task 4.8's Lighthouse run
+              caught it). `/70` reaches 4.64:1 and is still visibly quieter than
+              the disclaimer above it.
+
+              Worth remembering when adding a token: CSS composites alpha in
+              *gamma* space, so a light foreground at reduced opacity over a
+              dark background is much darker than averaging the two suggests.
+            */}
+            <p className="text-aurora-fog/70 text-xs">{`© ${now.getFullYear()} ${displayName}`}</p>
           </div>
         </div>
       </AuroraContainer>

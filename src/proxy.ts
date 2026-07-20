@@ -30,7 +30,10 @@ export function proxy(request: NextRequest): NextResponse {
 
   if (isProtectedPath(pathname) && !hasSessionCookie) {
     // Preserve the query string too — an entry point like
-    // `/dashboard/events/new?templateId=aurora` (FR-51) is meaningless without it.
+    // `/dashboard/events/new?template=aurora` (FR-51) is meaningless without it.
+    // This is the safety net rather than the primary path: the homepage's Edit
+    // button already builds the `returnTo` itself (`lib/template-links.ts`), so
+    // this catches typed URLs, stale links, and expired sessions.
     const target = loginPathWithReturnTo(`${pathname}${search}`);
     return NextResponse.redirect(new URL(target, request.url));
   }

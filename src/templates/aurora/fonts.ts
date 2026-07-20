@@ -16,9 +16,22 @@ import { Archivo, Inter } from "next/font/google";
 const display = Archivo({
   subsets: ["latin"],
   variable: "--font-aurora-display",
-  // The display face is only ever set at heavy weights; loading the full
-  // variable range would ship axis data no heading uses.
-  weight: ["600", "700", "800"],
+  /*
+   * Exactly one weight, and the number is not arbitrary: `aurora.css` sets
+   * `font-weight: 700` on every heading and nothing anywhere sets another, so
+   * 700 is the only weight this face is ever rendered at.
+   *
+   * It previously asked for 600, 700, and 800. Each weight is a separate
+   * static font file, so that shipped three — and `next/font` *preloads* them
+   * all, putting ~80KB of never-rendered glyphs on the critical path ahead of
+   * the hero. Lighthouse measured four font files totalling 136KB competing
+   * with the render-blocking CSS, which is what held LCP at 3.8s (task 4.8).
+   *
+   * If a future heading needs a second weight, add it here *and* expect to pay
+   * for it — or switch to the variable font by dropping `weight` entirely,
+   * which is one file for the whole range.
+   */
+  weight: ["700"],
   display: "swap",
 });
 

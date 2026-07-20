@@ -103,8 +103,20 @@ export interface TemplateDefinition {
   id: string;
   name: string;
   description: string;
-  /** Path to a static preview image, used by the homepage template grid. */
-  thumbnail: string;
+  /**
+   * The template's own card artwork for the homepage gallery (FR-49).
+   *
+   * A component rather than a path to a screenshot. A screenshot is a copy of
+   * the template that no test can keep honest: change the palette and the
+   * gallery goes on advertising last month's design until somebody notices by
+   * eye. Artwork drawn with the template's own tokens cannot drift, ships no
+   * asset, and means adding Template 2 still requires nothing but a directory
+   * and a registry entry (NFR-6).
+   *
+   * Decorative by contract — the card renders `name` and `description` as text
+   * beside it, so the poster must not be the only place information appears.
+   */
+  Poster: ComponentType;
 
   /**
    * The event name the Live Preview demo site shows (FR-50).

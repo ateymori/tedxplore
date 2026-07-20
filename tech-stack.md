@@ -7,7 +7,7 @@
 | Framework   | **Next.js (App Router)**                                   | One app: marketing page, editor, admin, public sites                     |
 | Language    | **TypeScript** (strict)                                    | End-to-end typing, no `any` escapes                                      |
 | UI          | **React**, **Tailwind CSS**, **shadcn/ui**                 | shadcn for app/editor/admin chrome; public templates use bespoke styling |
-| Animation   | **Motion** (Framer Motion's current package, `motion`)     | Scroll-driven and entrance animations on public templates                |
+| Animation   | **CSS scroll-driven animations** (no JS animation library) | Reveals/parallax on public templates; visible state is the default       |
 | Database    | **PostgreSQL on Neon**                                     | Vercel-integrated, serverless-friendly                                   |
 | ORM         | **Prisma**                                                 | Schema-first, migrations, typed client                                   |
 | Auth        | **Better Auth**                                            | Email/password + Google OAuth, email verification, password reset        |
@@ -73,15 +73,19 @@ interface TemplateDefinition {
   id: string; // "aurora" (V1 template)
   name: string;
   description: string;
-  thumbnail: string;
-  Renderer: ComponentType<{ content: EventContent; mode: RenderMode }>;
-  demoContent: EventContent; // placeholder content seeded into new events
+  demoDisplayName: string; // the demo site's event name
+  demoSeed: (now: Date) => TemplateDemoSeed; // placeholder content, in *draft* shape
+  Renderer: ComponentType<{ content: EventContent; mode: RenderMode; now: Date }>;
+  Poster: ComponentType; // card artwork for the homepage gallery
 }
 ```
 
 - `Event.templateId` is a plain string column — no template-specific fields anywhere in the schema (C-2).
-- The future template gallery reads this registry; adding Template 2 = adding one directory + one registry entry.
-- `demoContent` doubles as the seed for new drafts and the live demo/"preview" site.
+- The template gallery on the homepage reads this registry; adding Template 2 = adding one directory + one registry entry.
+- **The demo content is authored as a _draft_, not as `EventContent`.** It has two jobs — seed the relational tables of every new event, and render the homepage's Live Preview — and `demoContent(template, now)` derives the second from the first by running the real serializer. Maintaining an `EventContent` fixture beside the seed would be two sources of truth that silently drift.
+- **`demoSeed` takes `now`** because the seed contains an event _date_. A fixed one would rot into the "this event has taken place" state (FR-39) on the homepage and in every newly seeded draft.
+- **`Poster` is a component, not a thumbnail path.** A screenshot is a copy of the template that nothing keeps honest; artwork drawn with the template's own tokens cannot drift and ships no asset.
+- **`Renderer` takes `now` as a prop rather than reading the clock.** Published sites are statically rendered, so `new Date()` inside a component freezes at build time with nothing to reveal it. The countdown is the deliberate exception and ticks client-side, because the only correct clock is the visitor's.
 
 ### 2.4 Routing map
 
@@ -159,7 +163,8 @@ Approval is a single transaction (update request + event pointer) — the live s
 8. **Better Auth over NextAuth:** first-class email/password + verification + reset flows out of the box, Prisma adapter, and clean session APIs — matches our exact requirements with less custom code.
 9. **shadcn/ui only for the application chrome.** Public templates are hand-crafted (typography, motion, layout) to avoid the generic look — they share Tailwind but not the component kit.
 10. **Centralized config module** (`src/config/limits.ts`, `src/config/reserved-slugs.ts`): every limit (16 speakers, 10 MB, …) and the slug blocklist defined once, imported by Zod schemas, UI copy, and server checks alike.
-11. **Prisma 7's connection model** (implemented in Phase 0): `schema.prisma` no longer holds a datasource URL — that lives in `prisma.config.ts`, read from `DIRECT_URL` (unpooled, used by CLI migrate commands). The runtime `PrismaClient` (`src/server/repositories/prisma.ts`) instead takes an explicit driver adapter (`@prisma/adapter-pg`) constructed from the pooled `DATABASE_URL`. This replaces the older single-`datasource-url`-with-`directUrl`-field pattern implied elsewhere in this doc; the pooled-vs-direct split still holds, just wired through two different files.
+11. **No JavaScript animation library** (decided in Phase 4, superseding the earlier choice of `motion`, which is uninstalled). A JS reveal has to server-render its _pre-animation_ state, so every section — including the hero's `<h1>` — shipped as `style="opacity:0"` and a statically rendered public site stayed blank until hydration, delaying LCP behind a JS download and showing nothing at all with JS disabled. Reveals and parallax are CSS scroll-driven animations (`animation-timeline: view()`) authored so the _visible_ state is the default and the animation is pure enhancement; browsers without support simply show everything. `prefers-reduced-motion` is honoured per-keyframe, since there is no library config to defer to.
+12. **Prisma 7's connection model** (implemented in Phase 0): `schema.prisma` no longer holds a datasource URL — that lives in `prisma.config.ts`, read from `DIRECT_URL` (unpooled, used by CLI migrate commands). The runtime `PrismaClient` (`src/server/repositories/prisma.ts`) instead takes an explicit driver adapter (`@prisma/adapter-pg`) constructed from the pooled `DATABASE_URL`. This replaces the older single-`datasource-url`-with-`directUrl`-field pattern implied elsewhere in this doc; the pooled-vs-direct split still holds, just wired through two different files.
 
 ## 4. Environment & Services
 

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  */
 
 const VARIANTS = {
-  primary: "bg-aurora-red text-white hover:bg-aurora-ember",
+  primary: "bg-aurora-red text-white hover:bg-aurora-red-deep",
   outline: "border border-aurora-line text-aurora-snow hover:border-aurora-fog hover:bg-white/5",
 } as const;
 

@@ -101,9 +101,17 @@ export function AuroraSiteNav({ displayName, items, registrationUrl }: AuroraSit
       )}
     >
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-6 px-6 sm:px-8 lg:h-20 lg:px-12">
+        {/*
+          Allowed to shrink and ellipsize rather than `shrink-0`. Display names
+          run to 60 characters ("TEDxUniversity of California, Santa Cruz") and
+          an unshrinkable wordmark pushed the menu button off a 360px viewport,
+          which gives the whole page a horizontal scrollbar. `min-w-0` is the
+          part that actually does it — a flex item's automatic minimum size
+          would otherwise refuse to go below its text width.
+        */}
         <a
           href="#top"
-          className="text-aurora-snow hover:text-aurora-ember shrink-0 text-base font-semibold tracking-tight transition-colors lg:text-lg"
+          className="text-aurora-snow hover:text-aurora-ember min-w-0 truncate text-base font-semibold tracking-tight transition-colors lg:text-lg"
         >
           {displayName}
         </a>
@@ -131,13 +139,21 @@ export function AuroraSiteNav({ displayName, items, registrationUrl }: AuroraSit
           </nav>
         ) : null}
 
-        <div className={cn("flex items-center gap-2", hasNav ? "lg:ml-8" : "ml-auto")}>
+        {/*
+          `ml-auto` at every width, so the CTA and menu button sit against the
+          right edge. Below `lg` the section nav is `display: none` and was the
+          only thing supplying an automatic margin — which left the menu button
+          tucked up against the wordmark on exactly the viewports where it is
+          the only navigation there is. At `lg` the nav's own `ml-auto` has
+          already taken the free space, and the fixed gap resumes.
+        */}
+        <div className={cn("ml-auto flex items-center gap-2", hasNav && "lg:ml-8")}>
           {registrationUrl ? (
             <a
               href={registrationUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-aurora-red hover:bg-aurora-ember hidden rounded-full px-5 py-2 text-sm font-semibold text-white transition-colors sm:inline-block"
+              className="bg-aurora-red hover:bg-aurora-red-deep hidden rounded-full px-5 py-2 text-sm font-semibold text-white transition-colors sm:inline-block"
             >
               Get tickets
             </a>
@@ -189,7 +205,7 @@ export function AuroraSiteNav({ displayName, items, registrationUrl }: AuroraSit
                   href={registrationUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-aurora-red hover:bg-aurora-ember block rounded-full px-5 py-3 text-center text-sm font-semibold text-white transition-colors"
+                  className="bg-aurora-red hover:bg-aurora-red-deep block rounded-full px-5 py-3 text-center text-sm font-semibold text-white transition-colors"
                 >
                   Get tickets
                 </a>

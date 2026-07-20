@@ -1,4 +1,5 @@
 import { AURORA_DEMO_DISPLAY_NAME, auroraDemoSeed } from "@/templates/aurora/demo-content";
+import { AuroraPoster } from "@/templates/aurora/poster";
 import { AuroraRenderer } from "@/templates/aurora/renderer";
 import type { TemplateDefinition } from "@/templates/types";
 
@@ -19,10 +20,10 @@ const aurora: TemplateDefinition = {
   name: "Aurora",
   description:
     "A cinematic single-page site with a full-bleed hero, scroll-driven reveals, and generous typography.",
-  thumbnail: "/templates/aurora.png",
   demoDisplayName: AURORA_DEMO_DISPLAY_NAME,
   demoSeed: auroraDemoSeed,
   Renderer: AuroraRenderer,
+  Poster: AuroraPoster,
 };
 
 const TEMPLATES = [aurora] as const;

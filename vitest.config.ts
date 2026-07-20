@@ -11,6 +11,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    // `.tsx` too: the template's fallback rules (FR-38 vs BR-13) are assertions
+    // about rendered output, so they are tested by rendering the real renderer
+    // through `react-dom/server` rather than by testing the predicate alone.
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

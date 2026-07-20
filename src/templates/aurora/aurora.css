@@ -25,10 +25,25 @@
   --color-aurora-fog: oklch(0.74 0.014 274);
   --color-aurora-snow: oklch(0.97 0.004 274);
 
-  /* TED red, the one non-negotiable brand colour, plus a lighter tint for
-     small text where the base red would fail contrast on near-black. */
+  /*
+   * TED red, the one non-negotiable brand colour, in three values that each
+   * exist for a measured reason (see task 4.8's contrast audit):
+   *
+   *   red    — fills the primary button. White on it is 4.82:1, which clears
+   *            AA for the button's 14px semibold label but leaves no headroom,
+   *            which is why the other two exist rather than being tints of
+   *            convenience.
+   *   ember  — red is only 4.17:1 as *text* on the near-black background, so
+   *            every red word on the page (eyebrows, links, icons) uses this
+   *            lighter tint instead, at 6.93:1.
+   *   deep   — the button's hover state. Hovering used to lighten the fill to
+   *            `ember`, which dropped the white label to 2.91:1 — a hover that
+   *            makes the control *less* legible than at rest. Darkening keeps
+   *            the same hue and reaches 6.97:1.
+   */
   --color-aurora-red: oklch(0.58 0.234 27);
   --color-aurora-ember: oklch(0.7 0.19 27);
+  --color-aurora-red-deep: oklch(0.48 0.21 27);
 
   /* The aurora itself: used only in gradients and glows, never for text. */
   --color-aurora-violet: oklch(0.58 0.21 302);
@@ -105,8 +120,8 @@
 
   /*
    * Switched off for reduced-motion users: an instant jump is the accessible
-   * behaviour, and Motion's `reducedMotion` setting has no say over native
-   * scrolling.
+   * behaviour, and no JavaScript motion library has any say over native
+   * scrolling anyway — smooth scroll has to opt out here or not at all.
    */
   @media (prefers-reduced-motion: reduce) {
     html:has(.aurora) {
@@ -123,14 +138,6 @@
   }
 }
 
-/*
- * The default hero visual (`components/backdrop.tsx`).
- *
- * Plain CSS rather than utilities because these are large blurred gradients
- * with keyframes — expressing them as arbitrary-value classes would be one
- * unreadable string per layer, and the drift animation has nowhere to live in
- * Tailwind at all.
- */
 /*
  * Scroll-driven reveals (`components/reveal.tsx`).
  *
@@ -181,6 +188,15 @@
     }
   }
 
+  /*
+   * The default hero visual (`components/backdrop.tsx`), which is what FR-38
+   * falls back to whenever no hero image has been uploaded.
+   *
+   * Plain CSS rather than utilities because these are large blurred gradients
+   * with keyframes — expressing them as arbitrary-value classes would be one
+   * unreadable string per layer, and the drift animation has nowhere to live in
+   * Tailwind at all.
+   */
   .aurora-veil {
     position: absolute;
     /* Oversized and offset so the blurred edges never enter the frame; a
@@ -219,6 +235,15 @@
    * Dithering noise as an inline SVG data URI — no network request, and no
    * binary asset to keep in the repo. `overlay` lets the grain darken and
    * lighten rather than just fogging the image.
+   *
+   * `numOctaves="1"`, deliberately, and it is a performance fix rather than an
+   * aesthetic choice. `feTurbulence` is rasterized on the main thread at paint
+   * time, and each octave is another full pass of the noise function; at three
+   * octaves Lighthouse attributed 307ms of element render delay to this one
+   * decorative div, which was also the page's Largest Contentful Paint element
+   * (it covers the whole hero). One octave is visually indistinguishable at
+   * `opacity: 0.16` — the extra octaves add fine detail that the opacity throws
+   * away — and costs a fraction of the paint.
    */
   /*
    * FAQ disclosure animation (`sections/faq.tsx`).
@@ -253,10 +278,18 @@
     display: none;
   }
 
+  /*
+   * Note for anyone tuning this: moving the image to `.aurora-grain::after` to
+   * get it out of the Largest Contentful Paint calculation does not work.
+   * Chrome attributes a pseudo-element's background image to its originating
+   * element, so the grain is still reported as the LCP element. Measured, not
+   * assumed — a first run appeared to show a large improvement and turned out
+   * to be a stale server.
+   */
   .aurora-grain {
     opacity: 0.16;
     mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }
 
@@ -302,15 +335,13 @@
 }
 
 /*
- * Motion's `reducedMotion` config governs `motion` components only; CSS
- * keyframes have to opt out themselves. The veils keep their static positions,
- * so the hero looks identical — it simply stops moving.
- */
-/*
- * With CSS animations there is no `MotionConfig` to defer to — each one opts
- * out here. Cancelling `aurora-reveal` leaves the element in its unanimated
- * state, which is the visible one; that is the whole reason the default is
- * authored that way round.
+ * `prefers-reduced-motion`, honoured by every animation on the page.
+ *
+ * There is no motion library here to defer the decision to, so each keyframe
+ * opts out explicitly. Cancelling `aurora-reveal` leaves the element in its
+ * *unanimated* state — which is the visible one, and the whole reason the
+ * keyframes are authored in that direction. The veils simply stop drifting and
+ * hold their positions, so the hero looks identical; it just stops moving.
  */
 @media (prefers-reduced-motion: reduce) {
   .aurora-enter,
