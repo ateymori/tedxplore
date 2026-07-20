@@ -2,17 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { DISPLAY_NAME_MAX_LENGTH } from "@/config/limits";
 
-import {
-  displayNameSchema,
-  isValidDisplayName,
-  suggestDisplayName,
-} from "./display-name";
+import { displayNameSchema, isValidDisplayName, suggestDisplayName } from "./display-name";
 
 describe("displayNameSchema", () => {
   it("accepts a typical TEDx display name", () => {
-    expect(displayNameSchema.parse("TEDxMcGill University")).toBe(
-      "TEDxMcGill University",
-    );
+    expect(displayNameSchema.parse("TEDxMcGill University")).toBe("TEDxMcGill University");
   });
 
   it.each([

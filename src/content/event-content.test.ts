@@ -18,19 +18,13 @@ describe("eventContentSchema", () => {
   });
 
   it("rejects a blank display name — the one always-required field", () => {
-    expect(
-      eventContentSchema.safeParse({ ...minimal, displayName: "" }).success,
-    ).toBe(false);
-    expect(
-      eventContentSchema.safeParse({ ...minimal, displayName: "   " }).success,
-    ).toBe(false);
+    expect(eventContentSchema.safeParse({ ...minimal, displayName: "" }).success).toBe(false);
+    expect(eventContentSchema.safeParse({ ...minimal, displayName: "   " }).success).toBe(false);
   });
 
   it("pins the schema version so old snapshots can be detected", () => {
     expect(minimal.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
-    expect(
-      eventContentSchema.safeParse({ ...minimal, schemaVersion: 2 }).success,
-    ).toBe(false);
+    expect(eventContentSchema.safeParse({ ...minimal, schemaVersion: 2 }).success).toBe(false);
   });
 
   it("survives a JSON round trip unchanged (snapshots are stored as JSON)", () => {
@@ -84,16 +78,12 @@ describe("eventContentSchema", () => {
     ["data:", "data:text/html;base64,PHNjcmlwdD4="],
     ["a bare word", "example.com"],
   ])("rejects %s as a registration URL (BR-12)", (_label, url) => {
-    expect(eventContentSchema.safeParse({ ...minimal, registrationUrl: url }).success).toBe(
-      false,
-    );
+    expect(eventContentSchema.safeParse({ ...minimal, registrationUrl: url }).success).toBe(false);
   });
 
   it("accepts http and https registration URLs", () => {
     for (const url of ["https://example.com/tickets", "http://example.com"]) {
-      expect(
-        eventContentSchema.safeParse({ ...minimal, registrationUrl: url }).success,
-      ).toBe(true);
+      expect(eventContentSchema.safeParse({ ...minimal, registrationUrl: url }).success).toBe(true);
     }
   });
 

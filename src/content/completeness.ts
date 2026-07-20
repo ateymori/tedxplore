@@ -15,11 +15,7 @@ import type { EventContent } from "./event-content";
 
 /** Stable identifiers so the UI can link each problem to its editor section. */
 export type CompletenessField =
-  | "displayName"
-  | "themeOrAbout"
-  | "eventDate"
-  | "venueName"
-  | "contactEmail";
+  "displayName" | "themeOrAbout" | "eventDate" | "venueName" | "contactEmail";
 
 export interface CompletenessIssue {
   field: CompletenessField;
@@ -28,9 +24,7 @@ export interface CompletenessIssue {
   message: string;
 }
 
-export type CompletenessResult =
-  | { ok: true }
-  | { ok: false; issues: CompletenessIssue[] };
+export type CompletenessResult = { ok: true } | { ok: false; issues: CompletenessIssue[] };
 
 export function checkCompleteness(content: EventContent): CompletenessResult {
   const issues: CompletenessIssue[] = [];

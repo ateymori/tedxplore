@@ -49,10 +49,7 @@ export async function listPendingRequests() {
   });
 }
 
-type TerminalStatus = Extract<
-  PublishRequestStatus,
-  "APPROVED" | "REJECTED" | "CANCELED"
->;
+type TerminalStatus = Extract<PublishRequestStatus, "APPROVED" | "REJECTED" | "CANCELED">;
 
 /**
  * Moves a pending request to a terminal state, clearing `pendingEventId` in

@@ -50,15 +50,11 @@ describe("checkCompleteness", () => {
   });
 
   it("accepts an about description alone", () => {
-    expect(missingFields(completeContent({ theme: null, about: "A day of talks." }))).toEqual(
-      [],
-    );
+    expect(missingFields(completeContent({ theme: null, about: "A day of talks." }))).toEqual([]);
   });
 
   it("rejects when both theme and about are missing", () => {
-    expect(missingFields(completeContent({ theme: null, about: null }))).toEqual([
-      "themeOrAbout",
-    ]);
+    expect(missingFields(completeContent({ theme: null, about: null }))).toEqual(["themeOrAbout"]);
   });
 
   it.each([

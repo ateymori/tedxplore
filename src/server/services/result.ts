@@ -40,8 +40,7 @@ export type DomainError =
   | { type: "RATE_LIMITED"; retryAfterMs: number };
 
 export type Result<T, E extends DomainError = DomainError> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+  { ok: true; value: T } | { ok: false; error: E };
 
 export function ok<T>(value: T): Result<T, never> {
   return { ok: true, value };

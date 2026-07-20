@@ -51,8 +51,6 @@ describe("slugSchema", () => {
   it("reports the charset problem, not a length problem, for mixed input", () => {
     // "TEDx-2025" is 9 chars — long enough — so the only complaint should be
     // about the characters themselves.
-    expect(errorsFor("TEDx-2025")).toEqual([
-      expect.stringContaining("lowercase letters"),
-    ]);
+    expect(errorsFor("TEDx-2025")).toEqual([expect.stringContaining("lowercase letters")]);
   });
 });

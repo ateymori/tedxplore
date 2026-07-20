@@ -93,7 +93,12 @@ async function main() {
       },
       sponsors: {
         create: [
-          { name: "Acme Foundation", tier: "PARTNER", websiteUrl: "https://example.com", sortOrder: 0 },
+          {
+            name: "Acme Foundation",
+            tier: "PARTNER",
+            websiteUrl: "https://example.com",
+            sortOrder: 0,
+          },
           { name: "Northwind Labs", tier: "GOLD", websiteUrl: "https://example.com", sortOrder: 1 },
         ],
       },

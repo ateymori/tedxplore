@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { eventContentSchema } from "./event-content";
-import {
-  draftToEventContent,
-  sectionVisibility,
-  type EventDraft,
-} from "./serializer";
+import { draftToEventContent, sectionVisibility, type EventDraft } from "./serializer";
 
 /** A draft with only the one field that can never be blank (FR-15a). */
 function minimalDraft(overrides: Partial<EventDraft> = {}): EventDraft {
@@ -164,8 +160,26 @@ describe("draftToEventContent — normalization", () => {
     const content = draftToEventContent(
       minimalDraft({
         speakers: [
-          { id: "b", name: "Second", title: null, bio: null, talkTitle: null, photo: null, links: null, sortOrder: 2 },
-          { id: "a", name: "First", title: null, bio: null, talkTitle: null, photo: null, links: null, sortOrder: 1 },
+          {
+            id: "b",
+            name: "Second",
+            title: null,
+            bio: null,
+            talkTitle: null,
+            photo: null,
+            links: null,
+            sortOrder: 2,
+          },
+          {
+            id: "a",
+            name: "First",
+            title: null,
+            bio: null,
+            talkTitle: null,
+            photo: null,
+            links: null,
+            sortOrder: 1,
+          },
         ],
       }),
     );
@@ -177,8 +191,26 @@ describe("draftToEventContent — normalization", () => {
     const content = draftToEventContent(
       minimalDraft({
         speakers: [
-          { id: "a", name: "Ada", title: null, bio: null, talkTitle: null, photo: null, links: null, sortOrder: 0 },
-          { id: "b", name: "  ", title: null, bio: null, talkTitle: null, photo: null, links: null, sortOrder: 1 },
+          {
+            id: "a",
+            name: "Ada",
+            title: null,
+            bio: null,
+            talkTitle: null,
+            photo: null,
+            links: null,
+            sortOrder: 0,
+          },
+          {
+            id: "b",
+            name: "  ",
+            title: null,
+            bio: null,
+            talkTitle: null,
+            photo: null,
+            links: null,
+            sortOrder: 1,
+          },
         ],
       }),
     );
@@ -200,14 +232,14 @@ describe("draftToEventContent — normalization", () => {
     expect(content.faqs.map((f) => f.id)).toEqual(["a"]);
   });
 
-  it.each([
-    ["javascript:alert(1)"],
-    ["data:text/html,x"],
-    ["example.com"],
-    ["  "],
-  ])("drops the unsafe or malformed registration URL %s (BR-12)", (url) => {
-    expect(draftToEventContent(minimalDraft({ registrationUrl: url })).registrationUrl).toBeNull();
-  });
+  it.each([["javascript:alert(1)"], ["data:text/html,x"], ["example.com"], ["  "]])(
+    "drops the unsafe or malformed registration URL %s (BR-12)",
+    (url) => {
+      expect(
+        draftToEventContent(minimalDraft({ registrationUrl: url })).registrationUrl,
+      ).toBeNull();
+    },
+  );
 
   it("drops individually invalid social links without failing the document", () => {
     const content = draftToEventContent(
