@@ -52,7 +52,10 @@ export function SiteNav({ user }: { user: SessionUser | null }) {
           </div>
         ) : (
           // Base UI composes via `render`, not shadcn/Radix's `asChild`.
-          <Button size="sm" render={<Link href={LOGIN_PATH} />}>
+          // `nativeButton={false}` tells it this renders an <a>, not a
+          // <button> — without it Base UI applies native button semantics to
+          // an anchor, which it warns about at runtime.
+          <Button size="sm" nativeButton={false} render={<Link href={LOGIN_PATH} />}>
             Log In / Sign Up
           </Button>
         )}
