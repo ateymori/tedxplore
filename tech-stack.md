@@ -2,22 +2,22 @@
 
 ## 1. Stack Summary
 
-| Concern | Choice | Notes |
-|---|---|---|
-| Framework | **Next.js (App Router)** | One app: marketing page, editor, admin, public sites |
-| Language | **TypeScript** (strict) | End-to-end typing, no `any` escapes |
-| UI | **React**, **Tailwind CSS**, **shadcn/ui** | shadcn for app/editor/admin chrome; public templates use bespoke styling |
-| Animation | **Motion** (Framer Motion's current package, `motion`) | Scroll-driven and entrance animations on public templates |
-| Database | **PostgreSQL on Neon** | Vercel-integrated, serverless-friendly |
-| ORM | **Prisma** | Schema-first, migrations, typed client |
-| Auth | **Better Auth** | Email/password + Google OAuth, email verification, password reset |
-| Email | **Resend** + React Email | Verification, reset, review-lifecycle notifications |
-| Media | **Cloudinary** | Signed uploads, on-the-fly transforms, never serve originals |
-| Hosting | **Vercel** | Preview deployments, edge network |
-| Validation | **Zod** | Single source of truth shared by client forms and server handlers |
-| Forms | **react-hook-form** + Zod resolver | Editor section forms |
-| Testing | **Vitest** (+ Testing Library), **Playwright** (smoke E2E) | Focus on domain logic, publishing workflow, slug/validation rules |
-| Lint/format | **ESLint** + **Prettier** | Enforced in CI |
+| Concern     | Choice                                                     | Notes                                                                    |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Framework   | **Next.js (App Router)**                                   | One app: marketing page, editor, admin, public sites                     |
+| Language    | **TypeScript** (strict)                                    | End-to-end typing, no `any` escapes                                      |
+| UI          | **React**, **Tailwind CSS**, **shadcn/ui**                 | shadcn for app/editor/admin chrome; public templates use bespoke styling |
+| Animation   | **Motion** (Framer Motion's current package, `motion`)     | Scroll-driven and entrance animations on public templates                |
+| Database    | **PostgreSQL on Neon**                                     | Vercel-integrated, serverless-friendly                                   |
+| ORM         | **Prisma**                                                 | Schema-first, migrations, typed client                                   |
+| Auth        | **Better Auth**                                            | Email/password + Google OAuth, email verification, password reset        |
+| Email       | **Resend** + React Email                                   | Verification, reset, review-lifecycle notifications                      |
+| Media       | **Cloudinary**                                             | Signed uploads, on-the-fly transforms, never serve originals             |
+| Hosting     | **Vercel**                                                 | Preview deployments, edge network                                        |
+| Validation  | **Zod**                                                    | Single source of truth shared by client forms and server handlers        |
+| Forms       | **react-hook-form** + Zod resolver                         | Editor section forms                                                     |
+| Testing     | **Vitest** (+ Testing Library), **Playwright** (smoke E2E) | Focus on domain logic, publishing workflow, slug/validation rules        |
+| Lint/format | **ESLint** + **Prettier**                                  | Enforced in CI                                                           |
 
 ## 2. Architecture Overview
 
@@ -70,12 +70,12 @@ This yields, for free: identical rendering for preview/review/public (same rende
 ```ts
 // src/templates/registry.ts
 interface TemplateDefinition {
-  id: string;                    // "aurora" (V1 template)
+  id: string; // "aurora" (V1 template)
   name: string;
   description: string;
   thumbnail: string;
   Renderer: ComponentType<{ content: EventContent; mode: RenderMode }>;
-  demoContent: EventContent;     // placeholder content seeded into new events
+  demoContent: EventContent; // placeholder content seeded into new events
 }
 ```
 
@@ -98,7 +98,7 @@ interface TemplateDefinition {
 
 **Every event site is a path on the one application at `tedxplore.com`** — never a subdomain, never a separate domain. `tedxplore.com/tedxmcgillu` is a route of this Next.js app, served from the same deployment and codebase as the dashboard and admin area. (Per-event vanity domains are explicitly out of scope for V1.)
 
-The `tedx` prefix and the slug occupy a *single* URL segment, which the App Router cannot express as a folder: **a directory named `tedx[slug]` matches nothing** — partial dynamic segments are unsupported, a dynamic segment must occupy its entire segment. This was verified empirically, not assumed.
+The `tedx` prefix and the slug occupy a _single_ URL segment, which the App Router cannot express as a folder: **a directory named `tedx[slug]` matches nothing** — partial dynamic segments are unsupported, a dynamic segment must occupy its entire segment. This was verified empirically, not assumed.
 
 The public route is therefore a top-level `[site]` segment that receives the whole segment (`tedxmcgillu`) and strips the prefix itself, via `parseTedxSegment` in `src/config/site.ts` — the inverse of `tedxSitePath`, kept beside it so the two directions can't drift. A segment that doesn't start with `tedx`, or is exactly `tedx`, is a 404.
 
@@ -200,9 +200,13 @@ src/
     services/               # domain logic
     repositories/           # Prisma access
     adapters/               # cloudinary, resend, rate-limit
-    auth.ts
+    auth.ts                 # Better Auth instance
+    auth-guards.ts          # requireUser / requireAdmin / Result variants
   config/                   # limits, reserved slugs, site constants
   emails/                   # React Email templates
+  proxy.ts                  # Next 16's renamed `middleware` — optimistic auth redirects only
 prisma/
   schema.prisma, migrations/, seed.ts
+scripts/
+  grant-admin.ts            # the only way to set UserRole.ADMIN
 ```

@@ -34,3 +34,8 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          # `next build` executes module scope, which validates the server env
+          # (src/config/env.ts). These are throwaway build-time values — the
+          # build output reads the real secrets from the runtime environment.
+          BETTER_AUTH_SECRET: ci-build-placeholder-secret-not-used-at-runtime

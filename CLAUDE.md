@@ -2,13 +2,13 @@
 
 Tedxplore is a specialized **no-code platform that generates premium TEDx-style event websites from structured event data**. It is NOT a website builder: users never touch layout, HTML, CSS, or design — they fill in structured content (speakers, sponsors, venue, FAQs, …) and the platform renders a professionally designed, animated, responsive single-page site.
 
-Product philosophy: *"A premium event website generated automatically from structured event data."*
+Product philosophy: _"A premium event website generated automatically from structured event data."_
 
 ## Core documents (read before making decisions)
 
-- **`project-scope.md`** — functional/non-functional requirements (FR-x, NFR-x), user roles, flows, business rules (BR-x), out-of-scope list, roadmap, assumptions. The authority on *what* we build.
-- **`tech-stack.md`** — stack choices, architecture layering, `EventContent` contract, template registry, data model, publishing state machine, key decisions with rationale. The authority on *how*.
-- **`implementation-plan.md`** — 10 phases of small tasks with exit criteria. The authority on *order*. Check tasks off (`[x]`) as they are completed.
+- **`project-scope.md`** — functional/non-functional requirements (FR-x, NFR-x), user roles, flows, business rules (BR-x), out-of-scope list, roadmap, assumptions. The authority on _what_ we build.
+- **`tech-stack.md`** — stack choices, architecture layering, `EventContent` contract, template registry, data model, publishing state machine, key decisions with rationale. The authority on _how_.
+- **`implementation-plan.md`** — 10 phases of small tasks with exit criteria. The authority on _order_. Check tasks off (`[x]`) as they are completed.
 - `prompt.txt` — the original product brief (historical reference; the three docs above supersede it where they differ).
 
 ## Current status
@@ -16,11 +16,12 @@ Product philosophy: *"A premium event website generated automatically from struc
 - Planning docs approved by Mohammad (the product owner and sole admin).
 - **Phase 0 in progress:** 0.1–0.4 and 0.6 done (Next.js 16 + TS strict + Tailwind + shadcn/ui scaffolded; Prisma 7 wired to a local Postgres instance with a working migration pipeline; centralized config; base layout/error/404/health route). Local dev uses a `tedxplore` database on the Postgres instance already running on Mohammad's machine (`postgres:postgres@localhost:5432`), not Docker. 0.5's CI workflow file is written and locally verified; **Vercel project connection and the real Neon database are deferred until Mohammad runs `vercel login`**. Git is initialized locally; no GitHub remote yet.
 - **Phase 1 complete:** full V1 Prisma schema + single init migration (verified to replay from empty); `EventContent` Zod contract (`src/content/event-content.ts`, `schemaVersion: 1`); serializer + BR-13 section visibility (`src/content/serializer.ts`); BR-14 completeness gate (`src/content/completeness.ts`); slug/display-name/URL validators (`src/lib/validation/`); repository skeleton + `Result`/`DomainError` types (`src/server/`); idempotent seed (`prisma/seed.ts`, run with `pnpm exec prisma db seed`). 78 unit tests.
+- **Phase 2 complete:** Better Auth 1.6 (email/password with mandatory verification, optional Google OAuth, `role` via `additionalFields`); Resend adapter with a console fallback + React Email templates; auth UI (`/login`, `/signup`, `/verify-email`, `/forgot-password`, `/reset-password`); `src/proxy.ts` + `src/server/auth-guards.ts` with `returnTo` support. 113 unit tests. Every flow verified against the local database — signup → verify → auto sign-in, unverified sign-in refused, reset → session revocation → reused-token rejection, admin gate both ways.
 - Update this section as phases complete.
 
 ## Routing model (settled — don't re-derive)
 
-- **One app, one domain.** Every event site is a *path* on `tedxplore.com`: `tedxplore.com/tedx{slug}` (e.g. `/tedxmcgillu`). Not a subdomain, not a separate domain, not a separate deployment. Per-event custom domains are out of scope for V1.
+- **One app, one domain.** Every event site is a _path_ on `tedxplore.com`: `tedxplore.com/tedx{slug}` (e.g. `/tedxmcgillu`). Not a subdomain, not a separate domain, not a separate deployment. Per-event custom domains are out of scope for V1.
 - **The route is `src/app/[site]/`, not `src/app/tedx[slug]/`.** The App Router does not support partial dynamic segments — a folder named `tedx[slug]` matches nothing (verified empirically, returns 404). `[site]` receives the entire segment (`tedxmcgillu`) and strips the prefix via `parseTedxSegment` from `src/config/site.ts`.
 - Build URLs with `tedxSitePath`/`tedxSiteUrl`, parse them with `parseTedxSegment` — never hardcode the `tedx` prefix at a call site.
 - Static routes beat dynamic ones, so `/dashboard`, `/admin`, `/api/...` always take precedence over `[site]`. An event URL can therefore only collide with an app route that itself starts with `tedx`; the reserved-slug blocklist mainly prevents brand confusion (`/tedxplore`) and offensive URLs.
@@ -32,6 +33,22 @@ Product philosophy: *"A premium event website generated automatically from struc
 - **BR-9 (one pending publish request per event) is enforced by the database** via `PublishRequest.pendingEventId`: it holds `eventId` while PENDING and NULL in every terminal state, so a plain unique index acts as a partial index. A raw `WHERE status = 'PENDING'` index would register as permanent Prisma schema drift. Only `publish-request-repository.ts` may write `status`, so the two can't diverge.
 - **`EventContent` images carry no `alt` field.** Every V1 image slot has adjacent content that describes it better (speaker/sponsor/venue name); the hero background is decorative (`alt=""`). Templates derive alt text contextually.
 - **Auth tables are hand-written to match Better Auth's core schema.** Phase 2 should run Better Auth's CLI generate and reconcile before building on them. `role` is a Prisma enum surfaced through Better Auth's `additionalFields`.
+
+## Phase 2 decisions worth knowing
+
+- **Next.js 16 renamed `middleware.ts` to `proxy.ts`** (exporting `proxy`, not `middleware`). The file is `src/proxy.ts`; the `edge` runtime is not supported there.
+- **The proxy is not an authorization boundary.** It does an optimistic _cookie-presence_ check (`getSessionCookie`) and never validates a session. The real gate is `src/server/auth-guards.ts`, which every protected page, action, and handler must call. Never treat a path as protected merely because it appears in the proxy matcher.
+- **Guards come in two flavours by caller:** `requireUser`/`requireAdmin` redirect (pages/layouts), `getAuthenticatedUser`/`getAdminUser` return a `Result` (Server Actions/route handlers, which must render an error rather than redirect mid-mutation). `getCurrentUser` is wrapped in React `cache`, so calling a guard repeatedly in one request is free.
+- **Email verification is enforced by Better Auth, not by our code.** `requireEmailVerification: true` means no session is ever issued to an unverified account, so holding a session _is_ proof of verification (FR-3) — do not re-check `emailVerified` in guards.
+- **`role` is `input: false`.** It cannot be set through sign-up or any client call. The only path to ADMIN is `pnpm exec tsx scripts/grant-admin.ts <email>` (`--revoke` to reverse). There is intentionally no admin-granting UI.
+- **`returnTo` is attacker-controlled.** Always pass it through `sanitizeReturnTo`/`resolveReturnTo` (`src/lib/return-to.ts`) before navigating — an open redirect on a login page is a phishing primitive. Sanitize server-side in the page, then hand the clean value to client components.
+- **Google OAuth and Resend degrade instead of failing.** Missing Google credentials hide the button and skip provider registration; a missing `RESEND_API_KEY` prints emails to the server console (which is how the flows were tested locally). `assertProductionIntegrations()` still refuses these modes at request time in production.
+- **`src/config/env.ts` validates server env at module load.** CI's build step therefore supplies a placeholder `BETTER_AUTH_SECRET` — `next build` executes module scope without runtime secrets.
+- **The hand-written auth tables were reconciled against `@better-auth/cli generate`** and match field-for-field; the sole deliberate deviation is `role` as the `UserRole` Prisma enum where the generator emits `String`. No migration was needed. (The CLI cannot load a config importing `server-only`; reconcile via a temporary standalone config file.)
+
+- **Forms use React Hook Form + `zodResolver`** against the shared schemas in `src/lib/validation/`. API failures go to `form.setError("root", …)` and render in an `Alert`; field errors render in `FieldError`. Don't hand-roll `FormData` parsing.
+- **`pnpm.overrides` pins a single `zod`.** `globals.css` imports `shadcn/tailwind.css`, so the `shadcn` package is a real build dependency — and it depends on zod 3.25, whose bundled `zod/v4` preview is a *different type identity* from our zod 4. Without the override, `@hookform/resolvers` resolves the wrong copy and every `zodResolver` call fails to typecheck. Don't remove `shadcn` (the build needs it) and don't remove the override.
+- **`SiteNav` takes `user` as a prop** rather than reading the session itself, so each layout controls where the session comes from and the signed-in state is in the first HTML. It is deliberately absent from `[site]` — public event sites render the organizer's template chrome, not ours.
 
 ## Architectural invariants (never violate)
 
@@ -45,13 +62,13 @@ Product philosophy: *"A premium event website generated automatically from struc
 ## Key product rules (quick reference — details in project-scope.md)
 
 - **Slug, Display Name, and Theme are three independent fields (BR-1..BR-5d) — never conflate them:**
-  - *Slug*: lowercase `a–z` only (no uppercase/digits/hyphens/spaces), 2–50 chars, globally unique, used exclusively to build the URL (`/tedx{slug}`), locked after first publication.
-  - *Display Name*: any-case letters + spaces + accents + hyphens (no digits); NOT unique; freely editable anytime, even after publication; pre-filled at creation with a `TEDx`+capitalized-slug suggestion the user typically overwrites (e.g., `TEDxMcGill University`); shown in nav/page-title/Hero; the **only** field that's always required and can never be saved blank.
-  - *Theme*: optional, ≤100 chars, short tagline/theme phrase shown as the Hero subtitle.
-- **Publishing:** draft/snapshot model. Submit → completeness check → new snapshot + PublishRequest (one pending max, cancelable). Approve = atomic live-snapshot swap. Reject requires a reason. Owner may unpublish/republish freely; republishing an *unchanged* approved snapshot needs no review. Admin may suspend/restore. Full-site review on every resubmission (no diffs in V1).
+  - _Slug_: lowercase `a–z` only (no uppercase/digits/hyphens/spaces), 2–50 chars, globally unique, used exclusively to build the URL (`/tedx{slug}`), locked after first publication.
+  - _Display Name_: any-case letters + spaces + accents + hyphens (no digits); NOT unique; freely editable anytime, even after publication; pre-filled at creation with a `TEDx`+capitalized-slug suggestion the user typically overwrites (e.g., `TEDxMcGill University`); shown in nav/page-title/Hero; the **only** field that's always required and can never be saved blank.
+  - _Theme_: optional, ≤100 chars, short tagline/theme phrase shown as the Hero subtitle.
+- **Publishing:** draft/snapshot model. Submit → completeness check → new snapshot + PublishRequest (one pending max, cancelable). Approve = atomic live-snapshot swap. Reject requires a reason. Owner may unpublish/republish freely; republishing an _unchanged_ approved snapshot needs no review. Admin may suspend/restore. Full-site review on every resubmission (no diffs in V1).
 - **Sections:** Hero, About TED, About TEDx, disclaimer, footer always render. Only the Hero has blank-able organizer content — Theme and hero/background imagery — each falling back to a platform-provided default so the Hero never looks broken; About TED/About TEDx/disclaimer are static platform copy with no organizer-editable portion at all. Every other section (About, Venue, Speakers, Sponsors, Team, FAQ, Contact) auto-hides when empty, with **no** fallback content (sponsor tiers individually auto-hide too). **No Schedule section in V1** (deferred; will be an additive `EventContent` version bump).
 - **Countdown** switches to "This event has taken place." after the event date.
-- **Public homepage:** browsable without login; template cards show *Live Preview* (opens `demoContent` through the real template, new tab, no auth) and *Edit* (unauthenticated → login/signup → returns to event creation for that template). V1 shows one card (`aurora`), grid built to scale to future templates.
+- **Public homepage:** browsable without login; template cards show _Live Preview_ (opens `demoContent` through the real template, new tab, no auth) and _Edit_ (unauthenticated → login/signup → returns to event creation for that template). V1 shows one card (`aurora`), grid built to scale to future templates.
 - **Limits (config/limits.ts):** 16 speakers, 30 team members, 30 sponsors, 30 FAQs, 10 MB/image.
 - **Sponsor tiers:** PARTNER, PLATINUM, GOLD, SILVER, BRONZE, COMMUNITY.
 - **Deletion:** confirmation required; soft delete if ever published, hard delete otherwise.

@@ -37,10 +37,10 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 **Goal:** complete auth lifecycle with email.
 
-- [ ] 2.1 (M) Better Auth setup: email/password + Google OAuth, Prisma adapter, session handling, `role` on User.
-- [ ] 2.2 (S) Resend adapter + React Email base layout; verification and password-reset emails.
-- [ ] 2.3 (M) Auth UI: sign up, sign in, verify-email, forgot/reset password pages (shadcn forms, Zod).
-- [ ] 2.4 (S) Route protection: middleware/guards for `(app)` (authenticated + verified) and `/admin` (ADMIN role); `requireUser`/`requireAdmin` helpers for actions/handlers. Include generic post-login `returnTo` redirect support (land back on the originally requested destination after auth) — needed by any unauthenticated entry point, notably the homepage's Edit button (FR-51, Phase 4).
+- [x] 2.1 (M) Better Auth setup: email/password + Google OAuth, Prisma adapter, session handling, `role` on User.
+- [x] 2.2 (S) Resend adapter + React Email base layout; verification and password-reset emails.
+- [x] 2.3 (M) Auth UI: sign up, sign in, verify-email, forgot/reset password pages (shadcn forms, Zod).
+- [x] 2.4 (S) Route protection: middleware/guards for `(app)` (authenticated + verified) and `/admin` (ADMIN role); `requireUser`/`requireAdmin` helpers for actions/handlers. Include generic post-login `returnTo` redirect support (land back on the originally requested destination after auth) — needed by any unauthenticated entry point, notably the homepage's Edit button (FR-51, Phase 4).
 
 **Exit:** full signup → verify → login → reset flows work on a deployed preview.
 
