@@ -33,6 +33,10 @@ export const THEME_MAX_LENGTH = 100; // BR-5d
 // for consistency.
 export const DISPLAY_NAME_MAX_LENGTH = 100;
 
+// The license holder / lead organizer named on the TEDx license (BR-16). Same
+// reasoning as above: a safety bound, not a business rule.
+export const LICENSE_HOLDER_NAME_MAX_LENGTH = 100;
+
 // Auth bounds. Shared by the client-side form schemas and Better Auth's own
 // server-side enforcement, so the two can never disagree about what the user
 // was told. `PASSWORD_MAX_LENGTH` is Better Auth's default ceiling, restated

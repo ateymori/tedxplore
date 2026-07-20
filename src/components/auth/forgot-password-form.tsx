@@ -95,9 +95,7 @@ export function ForgotPasswordForm() {
             aria-describedby={errors.email ? "email-error" : undefined}
             {...form.register("email")}
           />
-          {errors.email ? (
-            <FieldError id="email-error">{errors.email.message}</FieldError>
-          ) : null}
+          {errors.email ? <FieldError id="email-error">{errors.email.message}</FieldError> : null}
         </Field>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>

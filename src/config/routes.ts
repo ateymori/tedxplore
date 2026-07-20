@@ -16,6 +16,32 @@ export const RESET_PASSWORD_PATH = "/reset-password";
 export const DASHBOARD_PATH = "/dashboard";
 export const ADMIN_PATH = "/admin";
 
+/**
+ * Event management lives under `/dashboard`, which is already a protected
+ * prefix — so every page below is gated by the same rule, and adding one can't
+ * accidentally create an unguarded route. (The guards are still the real
+ * boundary; see `server/auth-guards.ts`.)
+ */
+export const NEW_EVENT_PATH = `${DASHBOARD_PATH}/events/new`;
+
+/** Selects which template a new event starts from (FR-51). */
+export const TEMPLATE_PARAM = "template";
+
+export function newEventPath(templateId?: string): string {
+  return templateId
+    ? `${NEW_EVENT_PATH}?${TEMPLATE_PARAM}=${encodeURIComponent(templateId)}`
+    : NEW_EVENT_PATH;
+}
+
+/** The structured editor for one event (Phase 5). */
+export function eventPath(eventId: string): string {
+  return `${DASHBOARD_PATH}/events/${eventId}`;
+}
+
+export function eventSettingsPath(eventId: string): string {
+  return `${eventPath(eventId)}/settings`;
+}
+
 /** Query parameter carrying the post-authentication destination (task 2.4). */
 export const RETURN_TO_PARAM = "returnTo";
 

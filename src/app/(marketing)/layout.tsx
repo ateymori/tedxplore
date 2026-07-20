@@ -11,11 +11,7 @@ import { getCurrentUser } from "@/server/auth-guards";
  * should revisit it — a session-aware island inside an otherwise static page is
  * the shape to aim for once the page has real content worth prerendering.
  */
-export default async function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
 
   return (

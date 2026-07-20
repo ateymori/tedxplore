@@ -90,9 +90,10 @@ export async function getAdminUser(): Promise<Result<SessionUser>> {
 }
 
 /**
- * Owner-or-admin authorization (architectural invariant 6), in one place so
- * every mutation spells the rule the same way.
+ * Re-exported for callers that already reach for the guards module.
+ *
+ * The rule itself lives in `services/authorization.ts` — it is a pure
+ * predicate, and keeping it out of this module means services can apply it
+ * without importing `next/navigation` and `server-only` along with it.
  */
-export function canManageEvent(user: SessionUser, ownerId: string): boolean {
-  return user.id === ownerId || user.role === "ADMIN";
-}
+export { canManageEvent } from "@/server/services/authorization";

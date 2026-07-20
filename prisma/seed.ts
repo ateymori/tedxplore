@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { DEFAULT_TEMPLATE_ID, findTemplate } from "../src/templates/registry";
 
 /**
  * Development seed: the platform admin (A-1) and one demo event.
@@ -10,10 +11,10 @@ import { PrismaClient } from "../src/generated/prisma/client";
  * Idempotent — safe to re-run. Everything keys off a stable slug or email, so
  * repeated runs update rather than duplicate.
  *
- * The demo event's content is intentionally hand-written here rather than
- * imported from the template's `demoContent`: that lives in the template
- * registry and does not exist until Phase 4. Once it does, this script should
- * seed *from* it so local data and the real new-event seed stay identical.
+ * The demo event's content comes from the template registry's demo seed — the
+ * same one the create-event flow uses (FR-10) — rather than being hand-written
+ * here. Local data therefore always matches what a real new event looks like,
+ * and improving the demo copy in one place improves both.
  */
 
 const prisma = new PrismaClient({
@@ -40,6 +41,11 @@ async function main() {
     },
   });
 
+  const template = findTemplate(DEFAULT_TEMPLATE_ID);
+  if (template === null) throw new Error(`Template "${DEFAULT_TEMPLATE_ID}" is not registered.`);
+
+  const seed = template.demoSeed(new Date());
+
   const event = await prisma.event.upsert({
     where: { slug: DEMO_SLUG },
     update: {},
@@ -47,75 +53,26 @@ async function main() {
       ownerId: admin.id,
       slug: DEMO_SLUG,
       displayName: "TEDxDemo University",
-      templateId: "aurora",
+      templateId: template.id,
       tedEventUrl: "https://www.ted.com/tedx/events/00000",
       licenseHolderName: "Tedxplore Admin",
       authorizationConfirmedAt: new Date(),
 
-      theme: "Ideas worth spreading, close to home",
-      aboutText:
-        "A day of talks, conversations, and performances from thinkers and makers in our community.",
-      eventDate: new Date("2026-11-14T18:00:00.000Z"),
-      timezone: "America/Toronto",
-      venueName: "Pollack Hall",
-      venueAddress: "555 Sherbrooke St W, Montreal, QC",
-      venueDescription: "A 600-seat concert hall in the heart of downtown.",
-      contactEmail: "hello@example.com",
-      registrationUrl: "https://example.com/tickets",
-      socialLinks: [
-        { platform: "INSTAGRAM", url: "https://instagram.com/example" },
-        { platform: "X", url: "https://x.com/example" },
-      ],
+      theme: seed.theme,
+      aboutText: seed.aboutText,
+      eventDate: seed.eventDate,
+      timezone: seed.timezone,
+      venueName: seed.venueName,
+      venueAddress: seed.venueAddress,
+      venueDescription: seed.venueDescription,
+      contactEmail: seed.contactEmail,
+      registrationUrl: seed.registrationUrl,
+      socialLinks: seed.socialLinks,
 
-      speakers: {
-        create: [
-          {
-            name: "Ada Lovelace",
-            title: "Mathematician",
-            talkTitle: "On the engines yet to come",
-            bio: "Writes about computation before it exists.",
-            sortOrder: 0,
-          },
-          {
-            name: "Grace Hopper",
-            title: "Computer Scientist",
-            talkTitle: "Why the best answer is 'let's try it'",
-            bio: "Believes the most dangerous phrase is 'we've always done it this way'.",
-            sortOrder: 1,
-          },
-        ],
-      },
-      teamMembers: {
-        create: [
-          { name: "Sam Lee", role: "Curator", sortOrder: 0 },
-          { name: "Jordan Reyes", role: "Production Lead", sortOrder: 1 },
-        ],
-      },
-      sponsors: {
-        create: [
-          {
-            name: "Acme Foundation",
-            tier: "PARTNER",
-            websiteUrl: "https://example.com",
-            sortOrder: 0,
-          },
-          { name: "Northwind Labs", tier: "GOLD", websiteUrl: "https://example.com", sortOrder: 1 },
-        ],
-      },
-      faqs: {
-        create: [
-          {
-            question: "Is there parking nearby?",
-            answer: "Yes — an underground lot sits directly beneath the venue.",
-            sortOrder: 0,
-          },
-          {
-            question: "Will talks be recorded?",
-            answer: "Every talk is filmed and published to the TEDx channel afterwards.",
-            sortOrder: 1,
-          },
-        ],
-      },
+      speakers: { create: seed.speakers },
+      teamMembers: { create: seed.teamMembers },
+      sponsors: { create: seed.sponsors },
+      faqs: { create: seed.faqs },
     },
   });
 

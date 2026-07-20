@@ -101,9 +101,7 @@ export function SignupForm({
             aria-describedby={errors.name ? "name-error" : undefined}
             {...form.register("name")}
           />
-          {errors.name ? (
-            <FieldError id="name-error">{errors.name.message}</FieldError>
-          ) : null}
+          {errors.name ? <FieldError id="name-error">{errors.name.message}</FieldError> : null}
         </Field>
 
         <Field data-invalid={Boolean(errors.email) || undefined}>
@@ -116,9 +114,7 @@ export function SignupForm({
             aria-describedby={errors.email ? "email-error" : undefined}
             {...form.register("email")}
           />
-          {errors.email ? (
-            <FieldError id="email-error">{errors.email.message}</FieldError>
-          ) : null}
+          {errors.email ? <FieldError id="email-error">{errors.email.message}</FieldError> : null}
         </Field>
 
         <Field data-invalid={Boolean(errors.password) || undefined}>
@@ -127,9 +123,7 @@ export function SignupForm({
             id="password"
             autoComplete="new-password"
             aria-invalid={Boolean(errors.password)}
-            aria-describedby={
-              errors.password ? "password-error" : "password-description"
-            }
+            aria-describedby={errors.password ? "password-error" : "password-description"}
             {...form.register("password")}
           />
           {errors.password ? (

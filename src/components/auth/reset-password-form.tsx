@@ -85,9 +85,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
             autoComplete="new-password"
             autoFocus
             aria-invalid={Boolean(errors.password)}
-            aria-describedby={
-              errors.password ? "password-error" : "password-description"
-            }
+            aria-describedby={errors.password ? "password-error" : "password-description"}
             {...form.register("password")}
           />
           {errors.password ? (
