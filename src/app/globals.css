@@ -2,6 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Public event templates. Their tokens are namespaced (`aurora-*`) and their
+   base styles are scoped to the template root, so they never touch app chrome —
+   but Tailwind only reads `@theme` from its own entry graph, which is why the
+   import has to be here rather than in the template's own components. */
+@import "../templates/aurora/aurora.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

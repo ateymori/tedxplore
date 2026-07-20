@@ -1,4 +1,5 @@
 import { AURORA_DEMO_DISPLAY_NAME, auroraDemoSeed } from "@/templates/aurora/demo-content";
+import { AuroraRenderer } from "@/templates/aurora/renderer";
 import type { TemplateDefinition } from "@/templates/types";
 
 /**
@@ -21,6 +22,7 @@ const aurora: TemplateDefinition = {
   thumbnail: "/templates/aurora.png",
   demoDisplayName: AURORA_DEMO_DISPLAY_NAME,
   demoSeed: auroraDemoSeed,
+  Renderer: AuroraRenderer,
 };
 
 const TEMPLATES = [aurora] as const;

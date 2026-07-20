@@ -1,0 +1,327 @@
+/*
+ * Aurora's design system.
+ *
+ * Deliberately separate from the shadcn tokens in `globals.css`: those dress
+ * the *application* (dashboard, admin, auth), and public event sites are
+ * bespoke (C-1). Every token here is `aurora-` namespaced so the two systems
+ * can share one Tailwind theme without either being able to restyle the other
+ * by accident.
+ *
+ * Imported from `globals.css` rather than from the renderer, because Tailwind
+ * v4 only reads `@theme` from its own entry graph — a CSS file imported by a
+ * component is bundled, but its tokens never become utilities.
+ *
+ * Aurora is a single, always-dark palette. It intentionally does not respond to
+ * `prefers-color-scheme`: an event site is a designed artifact, not app chrome,
+ * and the organizer approved one look in review.
+ */
+
+@theme {
+  /* Neutrals — a cool near-black, so the accents read as light rather than paint. */
+  --color-aurora-void: oklch(0.13 0.017 274);
+  --color-aurora-ink: oklch(0.17 0.019 274);
+  --color-aurora-surface: oklch(0.22 0.021 274);
+  --color-aurora-line: oklch(0.33 0.022 274);
+  --color-aurora-fog: oklch(0.74 0.014 274);
+  --color-aurora-snow: oklch(0.97 0.004 274);
+
+  /* TED red, the one non-negotiable brand colour, plus a lighter tint for
+     small text where the base red would fail contrast on near-black. */
+  --color-aurora-red: oklch(0.58 0.234 27);
+  --color-aurora-ember: oklch(0.7 0.19 27);
+
+  /* The aurora itself: used only in gradients and glows, never for text. */
+  --color-aurora-violet: oklch(0.58 0.21 302);
+  --color-aurora-teal: oklch(0.74 0.13 191);
+
+  /* Fluid type scale. One ramp for the whole template so section headings,
+     the hero, and body copy cannot drift apart as sections are added. */
+  --text-aurora-display: clamp(2.75rem, 9vw, 7rem);
+  --text-aurora-display--line-height: 0.94;
+  --text-aurora-display--letter-spacing: -0.035em;
+
+  --text-aurora-h2: clamp(2rem, 4.6vw, 3.5rem);
+  --text-aurora-h2--line-height: 1.04;
+  --text-aurora-h2--letter-spacing: -0.03em;
+
+  --text-aurora-h3: clamp(1.3rem, 2.1vw, 1.75rem);
+  --text-aurora-h3--line-height: 1.2;
+  --text-aurora-h3--letter-spacing: -0.02em;
+
+  --text-aurora-lead: clamp(1.0625rem, 1.5vw, 1.375rem);
+  --text-aurora-lead--line-height: 1.55;
+
+  --text-aurora-eyebrow: 0.75rem;
+  --text-aurora-eyebrow--line-height: 1;
+  --text-aurora-eyebrow--letter-spacing: 0.22em;
+
+  /* Vertical rhythm between sections, as one token rather than a class each. */
+  --spacing-aurora-section: clamp(4.5rem, 10vw, 9rem);
+}
+
+@layer base {
+  /*
+   * Scoped to the template root, not to `html`, so nothing here can leak into
+   * the dashboard — the editor (Phase 5.7) renders Aurora *inside* app chrome.
+   */
+  .aurora {
+    background-color: var(--color-aurora-void);
+    color: var(--color-aurora-snow);
+    font-family: var(--font-aurora-body), ui-sans-serif, system-ui, sans-serif;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .aurora :where(h1, h2, h3, h4) {
+    font-family: var(--font-aurora-display), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  .aurora :where(p) {
+    text-wrap: pretty;
+  }
+
+  /*
+   * Smooth scrolling has to be set on the *scrolling box*, which for fragment
+   * navigation is the document element — putting it on `.aurora` would be
+   * ignored. `:has()` lets the template still own the rule instead of asking
+   * the root layout to add a class for it, so mounting Aurora anywhere (public
+   * site, token preview, editor preview) gets the behaviour for free.
+   *
+   * The same selector paints the document background, so overscroll at either
+   * end of the page shows Aurora's void rather than the app's white.
+   */
+  html:has(.aurora) {
+    background-color: var(--color-aurora-void);
+    scroll-behavior: smooth;
+  }
+
+  /* Anchor jumps must clear the fixed header. */
+  .aurora :where([data-aurora-section]) {
+    scroll-margin-top: 5.5rem;
+  }
+
+  /*
+   * Switched off for reduced-motion users: an instant jump is the accessible
+   * behaviour, and Motion's `reducedMotion` setting has no say over native
+   * scrolling.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    html:has(.aurora) {
+      scroll-behavior: auto;
+    }
+  }
+
+  /* A visible, on-brand focus ring — the default `outline-ring/50` from the
+     app theme is invisible against Aurora's near-black. */
+  .aurora :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-aurora-ember);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
+/*
+ * The default hero visual (`components/backdrop.tsx`).
+ *
+ * Plain CSS rather than utilities because these are large blurred gradients
+ * with keyframes — expressing them as arbitrary-value classes would be one
+ * unreadable string per layer, and the drift animation has nowhere to live in
+ * Tailwind at all.
+ */
+/*
+ * Scroll-driven reveals (`components/reveal.tsx`).
+ *
+ * The default state is *visible*. Only inside the `@supports` block — where a
+ * scroll timeline is guaranteed to drive the animation to completion — is the
+ * element allowed to start hidden. Getting that order wrong is how a page ends
+ * up permanently blank in a browser that lacks the feature.
+ *
+ * Elements already on screen at load, the hero above all, have their entry
+ * range behind them at scroll position 0, so `both` resolves them to the final
+ * frame immediately. Nothing above the fold waits for a scroll that may never
+ * come.
+ */
+@layer components {
+  /*
+   * The load-driven variant, for above-the-fold content. Needs no `@supports`
+   * guard — a time-based animation is universally supported and always runs to
+   * completion, so starting from the hidden keyframe is safe here in a way it
+   * would not be for the scroll-driven one.
+   */
+  .aurora-enter {
+    animation: aurora-reveal 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--aurora-reveal-delay, 0ms);
+  }
+
+  @supports (animation-timeline: view()) {
+    /*
+     * The range stays entirely inside the `entry` phase, so the reveal is
+     * complete as soon as the element has properly arrived on screen.
+     *
+     * An earlier version ended at `cover 34%`, which is a much later point:
+     * anything taller than the viewport — every section here — was still
+     * mid-fade while fully visible, and a visitor following a nav anchor
+     * landed on a section that was half transparent and stayed that way until
+     * they scrolled further. Ending within `entry` makes "on screen" and
+     * "finished" the same moment.
+     */
+    .aurora-reveal {
+      animation: aurora-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry var(--aurora-reveal-start, 0%) entry var(--aurora-reveal-end, 60%);
+    }
+
+    .aurora-parallax {
+      animation: aurora-parallax linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+  }
+
+  .aurora-veil {
+    position: absolute;
+    /* Oversized and offset so the blurred edges never enter the frame; a
+       visible soft edge reads as a mistake rather than as light. */
+    inset: -30%;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.5;
+    will-change: transform;
+  }
+
+  .aurora-veil--violet {
+    background: radial-gradient(closest-side, var(--color-aurora-violet), transparent 70%);
+    translate: -18% -22%;
+    scale: 0.9;
+    animation: aurora-drift-a 26s ease-in-out infinite alternate;
+  }
+
+  .aurora-veil--teal {
+    background: radial-gradient(closest-side, var(--color-aurora-teal), transparent 70%);
+    translate: 24% 12%;
+    scale: 0.75;
+    opacity: 0.35;
+    animation: aurora-drift-b 32s ease-in-out infinite alternate;
+  }
+
+  .aurora-veil--red {
+    background: radial-gradient(closest-side, var(--color-aurora-red), transparent 70%);
+    translate: 6% 34%;
+    scale: 0.8;
+    opacity: 0.4;
+    animation: aurora-drift-c 38s ease-in-out infinite alternate;
+  }
+
+  /*
+   * Dithering noise as an inline SVG data URI — no network request, and no
+   * binary asset to keep in the repo. `overlay` lets the grain darken and
+   * lighten rather than just fogging the image.
+   */
+  /*
+   * FAQ disclosure animation (`sections/faq.tsx`).
+   *
+   * `interpolate-size` is what makes `height: auto` animatable at all; without
+   * it the only alternatives are measuring in JavaScript or capping answers at
+   * a fixed max-height that truncates long ones. Browsers that don't support
+   * `::details-content` simply toggle instantly, which is the correct
+   * degradation — the content is never hidden, only un-animated.
+   */
+  .aurora-faq {
+    interpolate-size: allow-keywords;
+  }
+
+  .aurora-faq::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 350ms cubic-bezier(0.16, 1, 0.3, 1),
+      content-visibility 350ms allow-discrete,
+      opacity 250ms ease;
+  }
+
+  .aurora-faq[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  /* Safari still shows its own disclosure triangle without this. */
+  .aurora-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .aurora-grain {
+    opacity: 0.16;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@keyframes aurora-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aurora-parallax {
+  from {
+    transform: translateY(-24px);
+  }
+  to {
+    transform: translateY(24px);
+  }
+}
+
+@keyframes aurora-drift-a {
+  to {
+    translate: -6% -12%;
+    scale: 1.05;
+  }
+}
+
+@keyframes aurora-drift-b {
+  to {
+    translate: 12% 24%;
+    scale: 0.95;
+  }
+}
+
+@keyframes aurora-drift-c {
+  to {
+    translate: 18% 20%;
+    scale: 0.95;
+  }
+}
+
+/*
+ * Motion's `reducedMotion` config governs `motion` components only; CSS
+ * keyframes have to opt out themselves. The veils keep their static positions,
+ * so the hero looks identical — it simply stops moving.
+ */
+/*
+ * With CSS animations there is no `MotionConfig` to defer to — each one opts
+ * out here. Cancelling `aurora-reveal` leaves the element in its unanimated
+ * state, which is the visible one; that is the whole reason the default is
+ * authored that way round.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-enter,
+  .aurora-reveal,
+  .aurora-parallax,
+  .aurora-veil {
+    animation: none;
+  }
+
+  .aurora-faq::details-content,
+  .aurora-faq summary svg {
+    transition: none;
+  }
+}

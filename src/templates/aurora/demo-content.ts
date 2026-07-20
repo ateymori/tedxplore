@@ -27,8 +27,21 @@ import type { TemplateDemoSeed } from "@/templates/types";
  */
 const DEMO_EVENT_DAYS_AHEAD = 120;
 
+/**
+ * The time of day the demo event starts, as UTC — 14:00Z is 09:00 in
+ * `America/Toronto`, which is when the FAQ below says doors open.
+ *
+ * Pinned rather than inherited from `now`, which would otherwise put whatever
+ * minute the page happened to render at into the hero ("3:03 PM"). The date
+ * still moves with `now` so the countdown never rots (FR-39); only the clock
+ * time is fixed.
+ */
+const DEMO_EVENT_UTC_HOUR = 14;
+
 function daysFrom(now: Date, days: number): Date {
-  return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  const date = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+  date.setUTCHours(DEMO_EVENT_UTC_HOUR, 0, 0, 0);
+  return date;
 }
 
 export const AURORA_DEMO_DISPLAY_NAME = "TEDxAurora Bay";

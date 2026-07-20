@@ -1,4 +1,6 @@
-import type { EventContent, SocialLink, SponsorTier } from "@/content/event-content";
+import type { ComponentType } from "react";
+
+import type { EventContent, RenderMode, SocialLink, SponsorTier } from "@/content/event-content";
 import type { EventDraft } from "@/content/serializer";
 import { draftToEventContent } from "@/content/serializer";
 
@@ -10,11 +12,36 @@ import { draftToEventContent } from "@/content/serializer";
  * database, and the database holds no template-specific fields (C-2), so
  * adding Template 2 is one directory and one registry entry (NFR-6).
  *
- * `Renderer` is deliberately absent until Phase 4.1 builds the first one.
- * Declaring it now would force either a placeholder component or an optional
- * field that every call site has to null-check forever; adding it when it
- * exists costs one line and makes the compiler find every consumer.
  */
+
+/**
+ * Everything a template is allowed to know.
+ *
+ * There is no event id, no slug, no owner, and no way to reach the database
+ * from here — a template is a function of its content and nothing else (C-1).
+ * That is what makes one renderer serve the public site, the owner's draft
+ * preview, a tokenized preview link, and the homepage demo unchanged.
+ */
+export interface TemplateRenderProps {
+  content: EventContent;
+  mode: RenderMode;
+  /**
+   * Render time, passed rather than read.
+   *
+   * Templates display time-dependent things — a copyright year, and from
+   * Phase 8 anything else that compares against the event date. Published
+   * sites are statically rendered, so `new Date()` inside a component would
+   * silently freeze at build time with nothing to reveal it. Taking it as a
+   * prop keeps the renderer pure and lets tests pin it, exactly as `demoSeed`
+   * does.
+   *
+   * The countdown is the deliberate exception: it needs the *visitor's* clock,
+   * not this one, and so ticks client-side.
+   */
+  now: Date;
+}
+
+export type TemplateRenderer = ComponentType<TemplateRenderProps>;
 
 /**
  * A template's placeholder content, in *draft* shape (A-6, FR-10).
@@ -98,6 +125,15 @@ export interface TemplateDefinition {
    * which is what lets tests pin it.
    */
   demoSeed: (now: Date) => TemplateDemoSeed;
+
+  /**
+   * The renderer itself: `(content, mode, now) → React tree`.
+   *
+   * Held on the definition rather than resolved by convention from `id`, so
+   * that `findTemplate(id).Renderer` is the only lookup any consumer needs and
+   * the compiler proves a registered template has one.
+   */
+  Renderer: TemplateRenderer;
 }
 
 /**

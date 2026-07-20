@@ -42,6 +42,18 @@ export function eventSettingsPath(eventId: string): string {
   return `${eventPath(eventId)}/settings`;
 }
 
+/**
+ * A template's Live Preview (FR-50) — its `demoContent` rendered through the
+ * real public renderer.
+ *
+ * Public and unauthenticated by design: the whole point is that a visitor can
+ * see what they would get before deciding to sign up, and can leave without
+ * ever creating an account.
+ */
+export function templatePreviewPath(templateId: string): string {
+  return `/templates/${encodeURIComponent(templateId)}/preview`;
+}
+
 /** Query parameter carrying the post-authentication destination (task 2.4). */
 export const RETURN_TO_PARAM = "returnTo";
 
