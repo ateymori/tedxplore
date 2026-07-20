@@ -2,8 +2,15 @@
 // every candidate slug at creation time in addition to the DB uniqueness
 // constraint — never duplicate this list at call sites.
 
-// App routes and platform-reserved words that would collide with existing
-// or future routes if allowed as an event slug.
+// App routes and platform-reserved words.
+//
+// Note these can't actually collide with app routes: an event lives at
+// `/tedx{slug}`, so slug "admin" yields `/tedxadmin`, never `/admin` — and
+// static routes outrank the `[site]` segment regardless. They stay blocked
+// because URLs like `/tedxadmin` or `/tedxapi` read as platform surfaces and
+// invite impersonation. A slug beginning with `tedx` is the only true
+// collision risk, and only against a future top-level route starting the same
+// way.
 const RESERVED_ROUTE_SLUGS = [
   "admin",
   "api",

@@ -92,11 +92,17 @@ interface TemplateDefinition {
 /dashboard/events/[id]/…  Editor (sectioned), settings, publish status
 /admin/…                  Review queue, reports, events (ADMIN only)
 /preview/[token]          Token-based draft preview (noindex)
-/tedx[slug]               Public published site  ← catch-all last in precedence
+/[site]                   Public published site: /tedx{slug}  ← last in precedence
 /api/…                    Route handlers (auth, autosave, uploads, reports)
 ```
 
-Public sites use a dynamic segment matching `tedx{slug}`; the reserved-slug blocklist prevents collisions with app routes.
+**Every event site is a path on the one application at `tedxplore.com`** — never a subdomain, never a separate domain. `tedxplore.com/tedxmcgillu` is a route of this Next.js app, served from the same deployment and codebase as the dashboard and admin area. (Per-event vanity domains are explicitly out of scope for V1.)
+
+The `tedx` prefix and the slug occupy a *single* URL segment, which the App Router cannot express as a folder: **a directory named `tedx[slug]` matches nothing** — partial dynamic segments are unsupported, a dynamic segment must occupy its entire segment. This was verified empirically, not assumed.
+
+The public route is therefore a top-level `[site]` segment that receives the whole segment (`tedxmcgillu`) and strips the prefix itself, via `parseTedxSegment` in `src/config/site.ts` — the inverse of `tedxSitePath`, kept beside it so the two directions can't drift. A segment that doesn't start with `tedx`, or is exactly `tedx`, is a 404.
+
+Next.js gives static routes precedence over dynamic ones, so `/dashboard`, `/admin`, and `/api/...` always win over `[site]` — the catch-all cannot shadow the application. This also means an event URL can only collide with an app route that itself begins with `tedx`; the reserved-slug blocklist's real work is preventing brand confusion (`/tedxplore`) and offensive URLs, not route collisions.
 
 ### 2.5 Data model (Prisma, summary)
 

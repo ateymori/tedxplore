@@ -21,15 +21,15 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 **Goal:** full schema + the content contract everything else depends on.
 
-- [ ] 1.1 (M) Prisma schema: all V1 models (User/auth tables, Event, Speaker, TeamMember, Sponsor, Faq, MediaAsset, Snapshot, PublishRequest, PreviewToken, Report) + enums; initial migration.
-- [ ] 1.2 (M) `EventContent` Zod schema + types (`content/event-content.ts`), versioned (`schemaVersion: 1`). Fields named to match the corrected model: `displayName` (required, never blank) and `theme` (optional, max 100 chars — BR-5d); all other fields optional (FR-15a) — schema encodes this directly so no downstream layer can re-require a field ad hoc. Note: the always-rendered-section fallback content (FR-38) is a template-rendering concern, not a schema concern — `theme` stays nullable here, and the renderer supplies the platform default when it's null, so a future update to the default copy automatically applies even to old snapshots.
-- [ ] 1.3 (M) Draft→content serializer (`content/serializer.ts`) + "usable content" emptiness rules per section (BR-13) + submission completeness check (BR-14). Field-level optionality (FR-15a: only `displayName` required to save a draft) is distinct from, and looser than, the submission completeness gate (BR-14) — keep the two checks separate in code. Unit tests must cover a minimal draft (display name only, no theme, everything else blank) alongside a fully-populated one.
-- [ ] 1.4 (S) Two independent validators — slug and display name now have unrelated charsets and purposes, so keep them as separate functions rather than deriving one from the other:
-  - **Slug validator**: lowercase `a–z` only (no uppercase, digits, spaces, or other characters), 3–50 chars, reserved blocklist, uniqueness on the stored value directly (no case-folding needed — the charset is already lowercase-only).
+- [x] 1.1 (M) Prisma schema: all V1 models (User/auth tables, Event, Speaker, TeamMember, Sponsor, Faq, MediaAsset, Snapshot, PublishRequest, PreviewToken, Report) + enums; initial migration.
+- [x] 1.2 (M) `EventContent` Zod schema + types (`content/event-content.ts`), versioned (`schemaVersion: 1`). Fields named to match the corrected model: `displayName` (required, never blank) and `theme` (optional, max 100 chars — BR-5d); all other fields optional (FR-15a) — schema encodes this directly so no downstream layer can re-require a field ad hoc. Note: the always-rendered-section fallback content (FR-38) is a template-rendering concern, not a schema concern — `theme` stays nullable here, and the renderer supplies the platform default when it's null, so a future update to the default copy automatically applies even to old snapshots.
+- [x] 1.3 (M) Draft→content serializer (`content/serializer.ts`) + "usable content" emptiness rules per section (BR-13) + submission completeness check (BR-14). Field-level optionality (FR-15a: only `displayName` required to save a draft) is distinct from, and looser than, the submission completeness gate (BR-14) — keep the two checks separate in code. Unit tests must cover a minimal draft (display name only, no theme, everything else blank) alongside a fully-populated one.
+- [x] 1.4 (S) Two independent validators — slug and display name now have unrelated charsets and purposes, so keep them as separate functions rather than deriving one from the other:
+  - **Slug validator**: lowercase `a–z` only (no uppercase, digits, spaces, or other characters), 2–50 chars, reserved blocklist, uniqueness on the stored value directly (no case-folding needed — the charset is already lowercase-only).
   - **Display Name validator**: Unicode-aware — letters of any case, spaces, accented letters, and hyphens allowed; digits rejected; not required to be unique. Plus a default-suggestion generator (`TEDx` + capitalized slug, e.g. slug `mcgillu` → suggested "TEDxMcgillu") that the create-event form pre-fills but the user can freely overwrite (e.g., to "TEDxMcGill University").
   - Unit tests for both, including accented/Unicode input for display name.
-- [ ] 1.5 (S) Repository layer skeleton + service-result types (discriminated unions for domain errors).
-- [ ] 1.6 (S) Seed script: admin user, one demo event.
+- [x] 1.5 (S) Repository layer skeleton + service-result types (discriminated unions for domain errors).
+- [x] 1.6 (S) Seed script: admin user, one demo event.
 
 **Exit:** `pnpm test` covers slug rules, serializer, completeness; schema migrated.
 
@@ -112,7 +112,7 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 **Goal:** fast, correct public rendering.
 
-- [ ] 8.1 (M) `/tedx[slug]` route: resolve slug → live snapshot → render (`mode: "public"`); static rendering + cache tags, revalidated by approve/unpublish/suspend; branded unavailable page for all non-live states.
+- [ ] 8.1 (M) Public site route: a top-level `src/app/[site]/` segment serving `tedxplore.com/tedx{slug}` as a path on the main app (not a subdomain). The segment arrives whole (`tedxmcgillu`); use `parseTedxSegment` from `config/site.ts` to strip the prefix — a folder named `tedx[slug]` does not work, partial dynamic segments are unsupported. Then resolve slug → live snapshot → render (`mode: "public"`); static rendering + cache tags, revalidated by approve/unpublish/suspend; branded unavailable page for all non-live states.
 - [ ] 8.2 (S) SEO: per-site metadata, Open Graph/Twitter cards from event imagery, canonical URLs; sitemap of published sites; robots rules (exclude previews).
 - [ ] 8.3 (S) Snapshot schema-version upgrader scaffold (v1 passthrough) so old snapshots keep rendering after future `EventContent` changes.
 

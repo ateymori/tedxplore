@@ -180,7 +180,7 @@ No organizations, collaborators, or granular permissions in V1 (schema designed 
 Slug, Display Name, and Theme serve entirely different purposes and must never be conflated: **Slug** is a URL-only technical identifier; **Display Name** is the human-readable event name shown throughout the UI; **Theme** is an optional short tagline/theme phrase. They have independent charsets, independent uniqueness rules, and independent editability rules.
 
 ### Slug
-- BR-1: Slug charset: **lowercase letters only** (`a–z`) — no uppercase, no numbers, no hyphens, no spaces, no other characters; length 3–50. The slug is always stored in this lowercase form (there is no separate casing to normalize).
+- BR-1: Slug charset: **lowercase letters only** (`a–z`) — no uppercase, no numbers, no hyphens, no spaces, no other characters; length 2–50. The slug is always stored in this lowercase form (there is no separate casing to normalize).
 - BR-2: The slug is used exclusively to build the public URL: `tedxplore.com/tedx{slug}` (e.g., slug `mcgillu` → `/tedxmcgillu`). It is never used to derive or display the event's name — that is Display Name's role.
 - BR-3: Slugs are globally unique (plain equality on the stored value) and reserved at creation.
 - BR-4: Reserved/system values are rejected via a centralized blocklist (e.g., `admin`, `api`, `auth`, `login`, `dashboard`, `preview`, `plore`, `press`, `about`, `terms`, `privacy`, `support`, `www`, `mail`, plus offensive terms).

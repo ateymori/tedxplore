@@ -1,7 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Tedxplore data model (V1).
+//
+// Invariants this schema encodes:
+//   • No template-specific fields anywhere (C-2) — `Event.templateId` is a
+//     plain string; presentation lives entirely in `src/templates/`.
+//   • Draft content is relational (granular editing, per-row limits);
+//     published output is a frozen `EventContent` JSON blob on `Snapshot`.
+//   • Snapshots are append-only (BR-8): nothing in the app ever updates one.
+//
+// Connection config lives in `prisma.config.ts` (Prisma 7) — no datasource
+// `url` here.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +17,413 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+/// BR-6. `deletedAt` is orthogonal to this state.
+enum PublicationStatus {
+  NEVER_PUBLISHED
+  PUBLISHED
+  UNPUBLISHED
+  SUSPENDED
+}
+
+enum SponsorTier {
+  PARTNER
+  PLATINUM
+  GOLD
+  SILVER
+  BRONZE
+  COMMUNITY
+}
+
+enum PublishRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+}
+
+/// What a `MediaAsset` is used for — drives Cloudinary transform presets and
+/// the accepted-format rules in `config/limits.ts` (SVG for sponsor logos only).
+enum MediaKind {
+  HERO
+  VENUE
+  SPEAKER_PHOTO
+  TEAM_PHOTO
+  SPONSOR_LOGO
+}
+
+enum ReportCategory {
+  IMPERSONATION
+  INAPPROPRIATE_CONTENT
+  SPAM_OR_SCAM
+  COPYRIGHT
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// ---------------------------------------------------------------------------
+// Auth (Better Auth core schema — table/field shapes are dictated by the
+// library; only `role` is ours, exposed via Better Auth's `additionalFields`).
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  role          UserRole @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions         Session[]
+  accounts         Account[]
+  events           Event[]
+  uploadedMedia    MediaAsset[]
+  reviewedRequests PublishRequest[] @relation("PublishRequestReviewer")
+  resolvedReports  Report[]         @relation("ReportResolver")
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Event + draft content
+// ---------------------------------------------------------------------------
+
+model Event {
+  id      String @id @default(cuid())
+  ownerId String
+
+  /// BR-1: lowercase a–z only, stored exactly as entered (no case folding
+  /// needed). BR-3: globally unique. BR-5: locked after first publication.
+  slug String @unique
+
+  /// BR-5c: the only field that can never be blank (FR-15a).
+  displayName String
+
+  templateId String
+
+  publicationStatus PublicationStatus @default(NEVER_PUBLISHED)
+
+  /// BR-7: exactly one live snapshot; approval swaps this pointer atomically.
+  liveSnapshotId String? @unique
+
+  // Licensing attestation (BR-16) — admin-visible, manually verified in V1.
+  tedEventUrl              String
+  licenseHolderName        String
+  authorizationConfirmedAt DateTime
+
+  // --- Draft content (FR-15). Every column here is nullable by design:
+  // FR-15a makes all of it optional while drafting. The stricter submission
+  // gate (BR-14) is enforced in code, not by the schema.
+  theme            String?
+  aboutText        String?
+  eventDate        DateTime?
+  /// IANA timezone name, e.g. "America/Toronto".
+  timezone         String?
+  venueName        String?
+  venueAddress     String?
+  venueDescription String?
+  contactEmail     String?
+  registrationUrl  String?
+  /// Array of { platform, url } — a list, not a fixed set of columns, so new
+  /// platforms never require a migration.
+  socialLinks      Json?
+  heroImageId      String?
+  venueImageId     String?
+
+  /// FR-13: set on soft delete (events that were ever published).
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  liveSnapshot Snapshot?   @relation("LiveSnapshot", fields: [liveSnapshotId], references: [id], onDelete: SetNull)
+  heroImage    MediaAsset? @relation("HeroImage", fields: [heroImageId], references: [id], onDelete: SetNull)
+  venueImage   MediaAsset? @relation("VenueImage", fields: [venueImageId], references: [id], onDelete: SetNull)
+
+  speakers        Speaker[]
+  teamMembers     TeamMember[]
+  sponsors        Sponsor[]
+  faqs            Faq[]
+  mediaAssets     MediaAsset[]     @relation("EventMedia")
+  snapshots       Snapshot[]       @relation("EventSnapshots")
+  publishRequests PublishRequest[]
+  previewTokens   PreviewToken[]
+  reports         Report[]
+
+  @@index([ownerId])
+  @@index([publicationStatus])
+  @@map("event")
+}
+
+model Speaker {
+  id        String  @id @default(cuid())
+  eventId   String
+  name      String
+  title     String?
+  bio       String?
+  talkTitle String?
+  photoId   String?
+  /// Array of { platform, url }.
+  links     Json?
+  sortOrder Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photo MediaAsset? @relation("SpeakerPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, sortOrder])
+  @@map("speaker")
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  eventId   String
+  name      String
+  role      String?
+  photoId   String?
+  /// Array of { platform, url }.
+  links     Json?
+  sortOrder Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photo MediaAsset? @relation("TeamPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, sortOrder])
+  @@map("team_member")
+}
+
+model Sponsor {
+  id         String      @id @default(cuid())
+  eventId    String
+  name       String
+  logoId     String?
+  websiteUrl String?
+  tier       SponsorTier
+  sortOrder  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  logo  MediaAsset? @relation("SponsorLogo", fields: [logoId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, tier, sortOrder])
+  @@map("sponsor")
+}
+
+model Faq {
+  id        String @id @default(cuid())
+  eventId   String
+  question  String
+  answer    String
+  sortOrder Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, sortOrder])
+  @@map("faq")
+}
+
+// ---------------------------------------------------------------------------
+// Media
+// ---------------------------------------------------------------------------
+
+/// FR-23: every Cloudinary upload is recorded so orphans can be swept and
+/// usage audited. Rows outlive the field that referenced them (all inbound
+/// refs are SetNull), which is what makes orphan cleanup possible.
+model MediaAsset {
+  id                 String    @id @default(cuid())
+  eventId            String
+  uploaderId         String?
+  cloudinaryPublicId String    @unique
+  kind               MediaKind
+  format             String
+  width              Int
+  height             Int
+  bytes              Int
+  createdAt          DateTime  @default(now())
+
+  event    Event @relation("EventMedia", fields: [eventId], references: [id], onDelete: Cascade)
+  uploader User? @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  heroFor     Event[]      @relation("HeroImage")
+  venueFor    Event[]      @relation("VenueImage")
+  speakers    Speaker[]    @relation("SpeakerPhoto")
+  teamMembers TeamMember[] @relation("TeamPhoto")
+  sponsors    Sponsor[]    @relation("SponsorLogo")
+
+  @@index([eventId])
+  @@map("media_asset")
+}
+
+// ---------------------------------------------------------------------------
+// Publishing
+// ---------------------------------------------------------------------------
+
+/// BR-8: immutable. Created on submission, never updated, never deleted while
+/// its event lives — superseded and rejected snapshots are retained for audit.
+model Snapshot {
+  id            String @id @default(cuid())
+  eventId       String
+  schemaVersion Int
+  /// A validated `EventContent` document (see src/content/event-content.ts).
+  content       Json
+
+  createdAt DateTime @default(now())
+
+  event Event @relation("EventSnapshots", fields: [eventId], references: [id], onDelete: Cascade)
+
+  liveFor         Event?           @relation("LiveSnapshot")
+  publishRequests PublishRequest[]
+
+  @@index([eventId, createdAt])
+  @@map("snapshot")
+}
+
+model PublishRequest {
+  id              String               @id @default(cuid())
+  eventId         String
+  snapshotId      String
+  status          PublishRequestStatus @default(PENDING)
+  submittedAt     DateTime             @default(now())
+  reviewedAt      DateTime?
+  reviewerId      String?
+  /// FR-33: required whenever `status` is REJECTED.
+  rejectionReason String?
+
+  /// BR-9 (at most one PENDING request per event), enforced by the database
+  /// rather than only the submit service — two concurrent submissions would
+  /// otherwise race past an application-level check.
+  ///
+  /// Holds `eventId` while `status` is PENDING and NULL in every terminal
+  /// state. Postgres unique indexes ignore NULLs, so the constraint binds
+  /// only on pending rows. This is a partial index expressed in a way Prisma
+  /// can model — a raw `WHERE status = 'PENDING'` index would register as
+  /// permanent schema drift. Every write that changes `status` must update
+  /// this column in the same statement; see the publish-request repository.
+  pendingEventId String? @unique
+
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  snapshot Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  reviewer User?    @relation("PublishRequestReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, submittedAt])
+  @@index([status, submittedAt])
+  @@map("publish_request")
+}
+
+/// FR-25/26: one active (non-revoked) token per event, enforced in the service.
+/// Tokens gate read-only draft views, not account access, so they're stored
+/// as-is rather than hashed (tech-stack decision 6).
+model PreviewToken {
+  id        String    @id @default(cuid())
+  eventId   String
+  token     String    @unique
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("preview_token")
+}
+
+// ---------------------------------------------------------------------------
+// Moderation
+// ---------------------------------------------------------------------------
+
+model Report {
+  id             String         @id @default(cuid())
+  eventId        String
+  category       ReportCategory
+  explanation    String
+  reporterEmail  String?
+  /// Hashed, never the raw IP — used for rate limiting (BR-15) and abuse
+  /// correlation only.
+  reporterIpHash String
+  status         ReportStatus   @default(OPEN)
+  createdAt      DateTime       @default(now())
+  resolvedAt     DateTime?
+  resolverId     String?
+
+  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  resolver User? @relation("ReportResolver", fields: [resolverId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([eventId, createdAt])
+  @@map("report")
 }

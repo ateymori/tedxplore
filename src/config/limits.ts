@@ -23,7 +23,7 @@ export const ACCEPTED_SPONSOR_LOGO_CONTENT_TYPES = [
   "image/svg+xml",
 ] as const;
 
-export const SLUG_MIN_LENGTH = 3;
+export const SLUG_MIN_LENGTH = 2;
 export const SLUG_MAX_LENGTH = 50;
 
 export const THEME_MAX_LENGTH = 100; // BR-5d

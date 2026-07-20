@@ -15,7 +15,23 @@ Product philosophy: *"A premium event website generated automatically from struc
 
 - Planning docs approved by Mohammad (the product owner and sole admin).
 - **Phase 0 in progress:** 0.1–0.4 and 0.6 done (Next.js 16 + TS strict + Tailwind + shadcn/ui scaffolded; Prisma 7 wired to a local Postgres instance with a working migration pipeline; centralized config; base layout/error/404/health route). Local dev uses a `tedxplore` database on the Postgres instance already running on Mohammad's machine (`postgres:postgres@localhost:5432`), not Docker. 0.5's CI workflow file is written and locally verified; **Vercel project connection and the real Neon database are deferred until Mohammad runs `vercel login`**. Git is initialized locally; no GitHub remote yet.
+- **Phase 1 complete:** full V1 Prisma schema + single init migration (verified to replay from empty); `EventContent` Zod contract (`src/content/event-content.ts`, `schemaVersion: 1`); serializer + BR-13 section visibility (`src/content/serializer.ts`); BR-14 completeness gate (`src/content/completeness.ts`); slug/display-name/URL validators (`src/lib/validation/`); repository skeleton + `Result`/`DomainError` types (`src/server/`); idempotent seed (`prisma/seed.ts`, run with `pnpm exec prisma db seed`). 78 unit tests.
 - Update this section as phases complete.
+
+## Routing model (settled — don't re-derive)
+
+- **One app, one domain.** Every event site is a *path* on `tedxplore.com`: `tedxplore.com/tedx{slug}` (e.g. `/tedxmcgillu`). Not a subdomain, not a separate domain, not a separate deployment. Per-event custom domains are out of scope for V1.
+- **The route is `src/app/[site]/`, not `src/app/tedx[slug]/`.** The App Router does not support partial dynamic segments — a folder named `tedx[slug]` matches nothing (verified empirically, returns 404). `[site]` receives the entire segment (`tedxmcgillu`) and strips the prefix via `parseTedxSegment` from `src/config/site.ts`.
+- Build URLs with `tedxSitePath`/`tedxSiteUrl`, parse them with `parseTedxSegment` — never hardcode the `tedx` prefix at a call site.
+- Static routes beat dynamic ones, so `/dashboard`, `/admin`, `/api/...` always take precedence over `[site]`. An event URL can therefore only collide with an app route that itself starts with `tedx`; the reserved-slug blocklist mainly prevents brand confusion (`/tedxplore`) and offensive URLs.
+
+## Phase 1 decisions worth knowing
+
+- **Slug minimum length is 2, not 3** (BR-1, `SLUG_MIN_LENGTH`) — changed during Phase 1.
+- **`EventContent` uses `null`, never `undefined`, for absent values.** Snapshots round-trip through `JSON.stringify`, which drops `undefined` keys — an optional field would change shape between the preview and published paths.
+- **BR-9 (one pending publish request per event) is enforced by the database** via `PublishRequest.pendingEventId`: it holds `eventId` while PENDING and NULL in every terminal state, so a plain unique index acts as a partial index. A raw `WHERE status = 'PENDING'` index would register as permanent Prisma schema drift. Only `publish-request-repository.ts` may write `status`, so the two can't diverge.
+- **`EventContent` images carry no `alt` field.** Every V1 image slot has adjacent content that describes it better (speaker/sponsor/venue name); the hero background is decorative (`alt=""`). Templates derive alt text contextually.
+- **Auth tables are hand-written to match Better Auth's core schema.** Phase 2 should run Better Auth's CLI generate and reconcile before building on them. `role` is a Prisma enum surfaced through Better Auth's `additionalFields`.
 
 ## Architectural invariants (never violate)
 
@@ -29,7 +45,7 @@ Product philosophy: *"A premium event website generated automatically from struc
 ## Key product rules (quick reference — details in project-scope.md)
 
 - **Slug, Display Name, and Theme are three independent fields (BR-1..BR-5d) — never conflate them:**
-  - *Slug*: lowercase `a–z` only (no uppercase/digits/hyphens/spaces), 3–50 chars, globally unique, used exclusively to build the URL (`/tedx{slug}`), locked after first publication.
+  - *Slug*: lowercase `a–z` only (no uppercase/digits/hyphens/spaces), 2–50 chars, globally unique, used exclusively to build the URL (`/tedx{slug}`), locked after first publication.
   - *Display Name*: any-case letters + spaces + accents + hyphens (no digits); NOT unique; freely editable anytime, even after publication; pre-filled at creation with a `TEDx`+capitalized-slug suggestion the user typically overwrites (e.g., `TEDxMcGill University`); shown in nav/page-title/Hero; the **only** field that's always required and can never be saved blank.
   - *Theme*: optional, ≤100 chars, short tagline/theme phrase shown as the Hero subtitle.
 - **Publishing:** draft/snapshot model. Submit → completeness check → new snapshot + PublishRequest (one pending max, cancelable). Approve = atomic live-snapshot swap. Reject requires a reason. Owner may unpublish/republish freely; republishing an *unchanged* approved snapshot needs no review. Admin may suspend/restore. Full-site review on every resubmission (no diffs in V1).

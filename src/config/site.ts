@@ -11,8 +11,26 @@ export const SITE_DESCRIPTION =
 // preview/production deploys.
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-// Public event sites are served at `/tedx{slug}` (BR-2).
+/**
+ * Public event sites live at `tedxplore.com/tedx{slug}` (BR-2) — a path on the
+ * main application, not a subdomain and not a separate domain. `/tedxmcgillu`
+ * is one route of this Next.js app, served from the same deployment as the
+ * dashboard and admin area.
+ *
+ * The prefix and the slug share a single URL segment, which the App Router
+ * cannot express as a folder: a directory named `tedx[slug]` does not match
+ * anything (verified — partial dynamic segments are unsupported; a dynamic
+ * segment must occupy the whole segment). The public route is therefore a
+ * top-level `[site]` segment that receives the *entire* segment — `tedxmcgillu`
+ * — and splits the prefix off itself, using `parseTedxSegment` below.
+ *
+ * Static sibling routes (`/dashboard`, `/admin`, `/api/...`) take precedence
+ * over `[site]`, so the catch-all never shadows the application.
+ */
 export const TEDX_PATH_PREFIX = "/tedx";
+
+/** The bare prefix, without the leading slash — the URL-segment form. */
+const TEDX_SEGMENT_PREFIX = "tedx";
 
 export function tedxSitePath(slug: string): string {
   return `${TEDX_PATH_PREFIX}${slug}`;
@@ -20,4 +38,21 @@ export function tedxSitePath(slug: string): string {
 
 export function tedxSiteUrl(slug: string): string {
   return `${APP_URL}${tedxSitePath(slug)}`;
+}
+
+/**
+ * The inverse of `tedxSitePath`: turns a `[site]` route param back into a slug.
+ *
+ * Returns `null` when the segment isn't an event URL at all, which the route
+ * should treat as a 404. Lives here rather than in the route so the two
+ * directions of the mapping can never drift apart.
+ *
+ * Note this only checks the *shape* of the segment. Whether the slug is valid
+ * (`slugSchema`) or exists is the route's business.
+ */
+export function parseTedxSegment(segment: string): string | null {
+  if (!segment.startsWith(TEDX_SEGMENT_PREFIX)) return null;
+
+  const slug = segment.slice(TEDX_SEGMENT_PREFIX.length);
+  return slug.length === 0 ? null : slug;
 }
