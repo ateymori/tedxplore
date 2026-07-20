@@ -1,0 +1,420 @@
+ctx7sk-66ea800f-b49d-4399-ab43-7257633d33ef
+
+I am building a platform called Tedxplore.
+
+Tedxplore is a specialized no-code platform that allows TEDx-style event teams to create beautiful, modern, highly polished event websites without needing technical knowledge, WordPress, hosting setup, UI/UX skills, or frontend development experience.
+
+The platform is NOT a generic website builder like Wix, Webflow, Squarespace, or WordPress.
+
+Instead, it is a highly specialized platform that generates premium event websites from structured event data.
+
+The product philosophy is:
+
+"A premium event website generated automatically from structured event data."
+
+NOT:
+
+"A drag-and-drop website builder."
+
+My goal is to build a production-quality, scalable foundation that is simple for organizers to use while remaining extensible for future features.
+
+Throughout this project, act as:
+
+- Senior Software Architect
+- Senior Full-Stack Engineer
+- Product Engineer
+- UI/UX Engineer
+
+Challenge my assumptions when appropriate. If you believe there is a better architectural or product decision, explain why before implementing it.
+
+==================================================
+BEFORE WRITING ANY CODE
+==================================================
+
+Before implementing anything:
+
+1. Carefully read this entire prompt and review all project requirements.
+
+2. Ask me clarifying questions about any ambiguous requirements, missing product decisions, edge cases, or architectural concerns.
+
+3. Help me discover requirements that I may have overlooked.
+
+4. Do NOT begin implementation until all important questions have been answered.
+
+5. After all questions have been answered, create the following documents:
+
+- project-scope.md
+- tech-stack.md
+- implementation-plan.md (Break the project into small implementation tasks grouped into logical phases.)
+
+The project-scope.md should contain:
+- Functional requirements
+- Non-functional requirements
+- User roles
+- User flows
+- Business rules
+- Out-of-scope features
+- Future roadmap
+- Assumptions
+- Constraints
+
+Also, wait for my approval before writing production code.
+
+==================================================
+VERY IMPORTANT PRODUCT CLARIFICATION
+==================================================
+
+Users are NOT designing websites.
+
+Users do NOT:
+
+- create components
+- build layouts
+- drag and drop elements
+- edit HTML
+- edit CSS
+- edit JavaScript
+- design pages visually
+- customize animations
+- build websites from scratch
+
+Instead:
+
+Every website is already:
+
+- professionally designed
+- fully developed
+- responsive
+- animated
+- visually polished
+- production-ready
+- populated with demo/template content
+
+The user simply replaces placeholder content with their own event information.
+
+Examples include:
+
+- event title
+- tagline
+- descriptions
+- speakers
+- speaker photos
+- speaker biographies
+- team members
+- sponsors
+- venue
+- schedule
+- FAQs
+- countdown date
+- social links
+- contact information
+- event images
+
+The editing experience should feel like editing structured content inside a CMS.
+
+Users should never be able to accidentally break the website design.
+
+==================================================
+LONG-TERM TEMPLATE VISION
+==================================================
+
+One of the primary long-term goals of Tedxplore is to provide multiple professionally designed single-page website templates.
+
+Each template should have its own:
+
+- layout
+- visual identity
+- typography
+- color palette
+- animations
+- transitions
+- section styling
+- interaction style
+- overall UI/UX
+
+Users should be able to browse all available templates before creating their event website.
+
+For example, imagine there are nine templates available.
+
+The homepage could display them as a 3 × 3 grid of template cards.
+
+Each template card should include:
+
+- a thumbnail image or an animated preview (GIF or short looping video)
+- hovering over a thumbnail may play the animated preview
+- a Live Preview button that opens a fully functional demo website in a new tab
+- an Edit button that begins customizing that template
+
+After selecting a template, the user enters edit mode.
+
+The template already contains beautiful placeholder/demo content.
+
+The user simply replaces the placeholder information with their own event content.
+
+The editing workflow should remain identical regardless of which template is selected.
+
+Only the presentation changes.
+
+The underlying event data does not.
+
+Version 1 only requires implementing ONE template.
+
+However, the architecture MUST make it easy to add additional templates later without requiring major refactoring.
+
+The application should separate:
+
+Content Layer
+
+- users
+- events
+- speakers
+- schedules
+- FAQs
+- sponsors
+- media
+- team members
+
+Presentation Layer
+
+- templates
+- layouts
+- animations
+- styling
+- rendering
+
+Templates should behave as interchangeable presentation layers.
+
+The editor should remain completely template-independent.
+
+The database should never contain template-specific fields.
+
+Adding Template 2 in the future should only require implementing another presentation layer that consumes the existing event data.
+
+==================================================
+SAVE DRAFT SUPPORT
+==================================================
+
+Users should be able to save their progress at any time.
+
+An event may remain in draft mode indefinitely.
+
+The user can return days or weeks later and continue editing.
+
+Drafts should preserve all entered information.
+
+==================================================
+CORE PROBLEM
+==================================================
+
+Many TEDx organizations:
+
+- do not have professional websites
+- only use social media
+- lack technical volunteers
+- do not know hosting or DNS
+- do not know WordPress
+- cannot design professional websites
+
+As a result:
+
+- information becomes fragmented
+- discoverability decreases
+- professionalism decreases
+- sponsorship opportunities decrease
+
+==================================================
+GOAL
+==================================================
+
+Allow users to:
+
+- create an account
+- create one or more events
+- choose a website template
+- customize the content
+- preview the website
+- save drafts
+- submit for approval
+- publish
+
+Public URL example:
+
+tedxplore.com/tedxabc
+
+Future:
+
+tedxabc.com
+
+==================================================
+TECH STACK
+==================================================
+
+Preferred stack:
+
+Frontend
+
+- Next.js (App Router)
+- React
+- TypeScript
+- Tailwind CSS - Shadcn
+- Framer Motion
+
+Backend
+
+- Next.js Route Handlers
+- PostgreSQL
+- Prisma ORM
+
+Authentication
+
+- Better Auth
+- Google OAuth
+- Email/password
+
+Hosting
+
+- Vercel
+
+Media
+
+- Cloudinary
+
+==================================================
+VERSION 1 DATA MODEL
+==================================================
+
+Keep Version 1 intentionally simple.
+
+One user may own one or more events.
+
+There is no Organization model in Version 1.
+
+Design the architecture so Organizations can be introduced later if needed.
+
+==================================================
+VERSION 1 FEATURES
+==================================================
+
+Include:
+
+- Authentication
+- Event creation
+- Event dashboard
+- Structured editor
+- Draft saving
+- Image upload
+- Website preview
+- Admin approval
+- Public website
+- Responsive design
+- Beautiful animations
+- Authorization
+- Basic moderation
+
+Do NOT build:
+
+- Multiple templates
+- Custom domains
+- Multilingual support
+- Analytics
+- AI
+- Blogging
+- Ticket integrations
+- Marketplace
+- Public discovery
+- Drag-and-drop editing
+- Advanced permissions
+
+==================================================
+PUBLIC WEBSITE SECTIONS
+==================================================
+
+The default template should include:
+
+- Hero
+- Countdown
+- About
+- Speakers
+- Team
+- Venue
+- Schedule
+- FAQ
+- Contact
+- About TED
+- About TEDx
+- Required footer
+
+==================================================
+DESIGN PHILOSOPHY
+==================================================
+
+The generated websites should feel:
+
+- premium
+- cinematic
+- elegant
+- immersive
+- modern
+- interactive
+- responsive
+
+Prioritize:
+
+- typography
+- spacing
+- animations
+- smooth scrolling
+- accessibility
+- performance
+
+Avoid generic-looking templates.
+
+==================================================
+DATABASE
+==================================================
+
+Design a scalable Prisma schema.
+
+Version 1 should include:
+
+- users
+- events
+- speakers
+- team_members
+- sponsors
+- schedule_items
+- faqs
+- media_assets
+- publish_requests
+- reports
+
+Prepare for future:
+
+- custom_domains
+- organizations
+- collaborators
+- templates
+
+Do not tightly couple the schema to Version 1 limitations.
+
+==================================================
+IMPLEMENTATION EXPECTATIONS
+==================================================
+
+Prefer:
+
+- maintainability
+- scalability
+- clean architecture
+- strong TypeScript typing
+- reusable components
+- separation of concerns
+
+Throughout the project, always prioritize:
+
+- clean architecture
+- scalability
+- maintainability
+- accessibility
+- performance
+- production-quality code
