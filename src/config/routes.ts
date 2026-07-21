@@ -5,6 +5,11 @@
 // sites are deliberately absent: they live under the `[site]` catch-all and are
 // never gated (see `config/site.ts`).
 
+// Relative, not aliased: `next.config.ts` imports `PREVIEW_PATH_PREFIX` from
+// this module to build the `X-Robots-Tag` rule, and the config is loaded
+// outside the app's module graph, where `@/` does not resolve.
+import { APP_URL } from "./site";
+
 export const HOME_PATH = "/";
 
 export const LOGIN_PATH = "/login";
@@ -56,7 +61,34 @@ export function eventSettingsPath(eventId: string): string {
  * `noindex` rules and rendering path as Phase 6 builds out.
  */
 export function eventPreviewPath(eventId: string): string {
-  return `/preview/draft/${eventId}`;
+  return `${PREVIEW_PATH_PREFIX}/draft/${eventId}`;
+}
+
+/**
+ * The `/preview` namespace, named once because `next.config.ts` has to match it
+ * too: every response below this prefix carries `X-Robots-Tag: noindex` (FR-27),
+ * and a header rule that drifted from the routes would silently start letting
+ * unpublished drafts into search results.
+ */
+export const PREVIEW_PATH_PREFIX = "/preview";
+
+/**
+ * A shareable, tokenized draft preview (FR-25).
+ *
+ * The token *is* the credential, so this path is never gated — which is
+ * precisely why it lives outside `PROTECTED_PREFIXES` and why the token is
+ * 256 bits (`lib/preview-token.ts`).
+ */
+export function previewLinkPath(token: string): string {
+  return `${PREVIEW_PATH_PREFIX}/${token}`;
+}
+
+/**
+ * The absolute form, which is the only useful one: this link exists to be
+ * copied out of the app and pasted somewhere else.
+ */
+export function previewLinkUrl(token: string): string {
+  return `${APP_URL}${previewLinkPath(token)}`;
 }
 
 /**

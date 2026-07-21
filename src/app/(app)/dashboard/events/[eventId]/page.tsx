@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Eye, Settings } from "lucide-react";
 
 import { EditorShell } from "@/components/editor/editor-shell";
+import { PreviewLinkDialog } from "@/components/events/preview-link-dialog";
 import { PublicationStatusBadge } from "@/components/events/event-status";
 import { Button } from "@/components/ui/button";
 import { DASHBOARD_PATH, eventPreviewPath, eventSettingsPath } from "@/config/routes";
@@ -12,6 +13,7 @@ import { draftToEditorDefaults } from "@/content/editor-defaults";
 import { requireUser } from "@/server/auth-guards";
 import { findEventDraft } from "@/server/repositories/event-repository";
 import { loadManageable } from "@/server/services/event-service";
+import { getPreviewLink } from "@/server/services/preview-link-service";
 
 export const metadata: Metadata = { title: "Edit event" };
 
@@ -44,6 +46,11 @@ export default async function EventEditorPage({
   // Only reachable if the event were deleted between the two queries.
   if (draft === null) notFound();
 
+  // The share dialog opens with the current link already in it (task 6.3). A
+  // failure here can only be the authorization we just passed, so it degrades
+  // to "no link yet" rather than taking the editor down with it.
+  const previewLink = await getPreviewLink(user, eventId);
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <div className="flex flex-col gap-2">
@@ -67,6 +74,10 @@ export default async function EventEditorPage({
           </div>
 
           <div className="flex items-center gap-2">
+            <PreviewLinkDialog
+              eventId={event.id}
+              initialLink={previewLink.ok ? previewLink.value : null}
+            />
             <Button
               variant="outline"
               nativeButton={false}

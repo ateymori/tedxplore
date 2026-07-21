@@ -1,8 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
+import { eventPath } from "@/config/routes";
 import { getAuthenticatedUser } from "@/server/auth-guards";
 import * as contentService from "@/server/services/content-service";
 import * as mediaService from "@/server/services/media-service";
+import * as previewLinkService from "@/server/services/preview-link-service";
 import type {
   ContentSaveResult,
   ListItemResult,
@@ -273,4 +277,42 @@ export async function removeImageAction(eventId: string, input: unknown): SaveRe
   if (!auth.ok) return auth;
 
   return mediaService.removeImage(auth.value, eventId, input);
+}
+
+// ---------------------------------------------------------------------------
+// Preview links (task 6.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * These two do revalidate, unlike everything above.
+ *
+ * The exception fits the rule rather than breaking it: the reason autosave
+ * doesn't revalidate is that it fires every 1.5 seconds. Issuing or revoking a
+ * link is a deliberate, occasional act, and the editor page server-renders the
+ * current link — so without this, navigating away and back would show a link
+ * that no longer works, or none where one now exists.
+ */
+
+export async function issuePreviewLinkAction(
+  eventId: string,
+): Promise<Result<previewLinkService.PreviewLink>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  const result = await previewLinkService.issuePreviewLink(auth.value, eventId);
+  if (result.ok) revalidatePath(eventPath(eventId));
+
+  return result;
+}
+
+export async function revokePreviewLinkAction(
+  eventId: string,
+): Promise<Result<{ revoked: number }>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  const result = await previewLinkService.revokePreviewLink(auth.value, eventId);
+  if (result.ok) revalidatePath(eventPath(eventId));
+
+  return result;
 }

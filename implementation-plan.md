@@ -90,9 +90,9 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 **Goal:** shareable read-only draft previews.
 
-- [ ] 6.1 (S) PreviewToken service: create/revoke/regenerate (single active token), 256-bit tokens.
-- [ ] 6.2 (S) `/preview/[token]` route: validates token, renders draft via template, `noindex` headers; branded invalid/revoked page.
-- [ ] 6.3 (S) Dashboard/editor UI: create link, copy, revoke, regenerate.
+- [x] 6.1 (S) PreviewToken service: create/revoke/regenerate (single active token), 256-bit tokens.
+- [x] 6.2 (S) `/preview/[token]` route: validates token, renders draft via template, `noindex` headers; branded invalid/revoked page.
+- [x] 6.3 (S) Dashboard/editor UI: create link, copy, revoke, regenerate.
 
 **Exit:** teammate without an account can view a draft; revocation works instantly.
 

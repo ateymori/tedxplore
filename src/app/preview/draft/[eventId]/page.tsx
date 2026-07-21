@@ -3,12 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { DraftSite } from "@/components/preview/draft-site";
 import { eventPath } from "@/config/routes";
-import { draftToEventContent } from "@/content/serializer";
 import { requireUser } from "@/server/auth-guards";
 import { findEventDraft } from "@/server/repositories/event-repository";
 import { loadManageable } from "@/server/services/event-service";
-import { findTemplate } from "@/templates/registry";
 
 /**
  * The owner's draft preview (FR-24, task 5.7).
@@ -53,14 +52,6 @@ export default async function DraftPreviewPage({
   const draft = await findEventDraft(eventId);
   if (draft === null) notFound();
 
-  const template = findTemplate(event.templateId);
-  // Only reachable if a template were removed from the registry while events
-  // still referenced it — a deployment mistake, not user input.
-  if (template === null) notFound();
-
-  const { Renderer } = template;
-  const now = new Date();
-
   return (
     <>
       {/*
@@ -82,7 +73,7 @@ export default async function DraftPreviewPage({
         </Link>
       </div>
 
-      <Renderer content={draftToEventContent(draft)} mode="preview" now={now} />
+      <DraftSite templateId={event.templateId} draft={draft} />
     </>
   );
 }
