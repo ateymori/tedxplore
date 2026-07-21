@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
-import { parseTedxSegment, siteCacheTag, tedxSiteSegment } from "@/config/site";
+import { parseTedxSegment, siteCacheTag, tedxSitePath, tedxSiteSegment } from "@/config/site";
+import {
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_WIDTH,
+  siteCardImage,
+  siteDescription,
+} from "@/lib/site-metadata";
 import type { LiveSite } from "@/server/services/site-service";
-import { listPublishedSiteSlugs, loadLiveSite } from "@/server/services/site-service";
+import { listPublishedSites, loadLiveSite } from "@/server/services/site-service";
 import { findTemplate } from "@/templates/registry";
 
 /**
@@ -46,11 +53,11 @@ import { findTemplate } from "@/templates/registry";
  * below happens before any boundary and `notFound()` still sets the status.
  *
  * The list being stale is harmless: a slug it omits is rendered on first
- * request and written to disk from then on. See `listPublishedSiteSlugs`.
+ * request and written to disk from then on. See `listPublishedSites`.
  */
 
 export async function generateStaticParams() {
-  const slugs = await listPublishedSlugsOrNone();
+  const slugs = (await listPublishedSitesOrNone()).map((site) => site.slug);
 
   // Cache Components rejects an empty array (`empty-generate-static-params`):
   // it needs at least one param to prerender, both to produce a shell and to
@@ -77,12 +84,12 @@ export async function generateStaticParams() {
  * exactly as a newly published one already is. Failing hard would mean a
  * database blip could block a deploy that has nothing to do with the database.
  */
-async function listPublishedSlugsOrNone(): Promise<string[]> {
+async function listPublishedSitesOrNone() {
   try {
-    return await listPublishedSiteSlugs();
+    return await listPublishedSites();
   } catch (error) {
     console.warn(
-      "[site] Could not list published slugs for prerendering; continuing with none.",
+      "[site] Could not list published sites for prerendering; continuing with none.",
       error,
     );
     return [];
@@ -122,6 +129,76 @@ async function getLiveSite(slug: string): Promise<CachedSite | null> {
 }
 
 type CachedSite = LiveSite & { renderedAt: Date };
+
+/**
+ * Per-site SEO and social cards (FR-47, task 8.2).
+ *
+ * Reads through the same `getLiveSite` the page does, so the metadata and the
+ * body are guaranteed to describe the same snapshot and the request costs one
+ * database read, not two — cached functions dedupe on their arguments.
+ *
+ * The title deliberately escapes the root layout's `%s · Tedxplore` template
+ * (`title.absolute`). A published event site belongs to its organizers; a
+ * browser tab and a search result reading "TEDxMcGill University · Tedxplore"
+ * would put the platform's name in front of theirs on their own page. The
+ * platform is credited in the footer, which is where the licensing obligation
+ * actually places it.
+ *
+ * Non-live slugs return nothing, which is both correct and unavoidable: the
+ * branded 404 must not describe an event — a suspended site's name would
+ * otherwise keep appearing in link previews after it went dark — and Next.js
+ * owns the metadata for a `notFound()` render regardless, supplying the site
+ * title and injecting `<meta name="robots" content="noindex">` itself
+ * (verified over HTTP). Returning a title here would be dead code.
+ */
+export async function generateMetadata({ params }: PageProps<"/[site]">): Promise<Metadata> {
+  const { site } = await params;
+  const slug = parseTedxSegment(site);
+  if (slug === null) return {};
+
+  const live = await getLiveSite(slug);
+  if (live === null) return {};
+
+  const { content } = live;
+  const description = siteDescription(content);
+  const card = siteCardImage(content);
+  const url = tedxSitePath(slug);
+
+  return {
+    title: { absolute: content.displayName },
+    ...(description === null ? {} : { description }),
+
+    // Relative to `metadataBase` (the root layout). Event sites are reachable
+    // at exactly one URL, so this is less about consolidating duplicates than
+    // about pinning the canonical host — a preview deployment that gets
+    // crawled must still point search engines at production.
+    alternates: { canonical: url },
+
+    openGraph: {
+      type: "website",
+      siteName: content.displayName,
+      title: content.displayName,
+      ...(description === null ? {} : { description }),
+      url,
+      ...(card === null
+        ? {}
+        : {
+            images: [
+              { url: card.url, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: card.alt },
+            ],
+          }),
+    },
+
+    twitter: {
+      // Falls back to a small square card when there is no image, which is
+      // what X does with `summary_large_image` and nothing to show.
+      card: card === null ? "summary" : "summary_large_image",
+      title: content.displayName,
+      ...(description === null ? {} : { description }),
+      ...(card === null ? {} : { images: [{ url: card.url, alt: card.alt }] }),
+    },
+  };
+}
 
 export default async function PublicSitePage({ params }: PageProps<"/[site]">) {
   const { site } = await params;

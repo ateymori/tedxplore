@@ -1,7 +1,7 @@
 import "server-only";
 import { updateTag } from "next/cache";
 
-import { siteCacheTag } from "@/config/site";
+import { SITEMAP_CACHE_TAG, siteCacheTag } from "@/config/site";
 
 /**
  * Public-site cache invalidation.
@@ -51,4 +51,11 @@ import { siteCacheTag } from "@/config/site";
  */
 export function revalidateSite(slug: string): void {
   updateTag(siteCacheTag(slug));
+
+  // The sitemap too (task 8.2). Every caller of this function is an action
+  // that moves a site into or out of the published set — approve, unpublish,
+  // suspend, restore — which is exactly when the sitemap's *contents* change,
+  // not just one page's. Doing it here rather than at the four call sites
+  // means a fifth publishing action cannot forget it.
+  updateTag(SITEMAP_CACHE_TAG);
 }

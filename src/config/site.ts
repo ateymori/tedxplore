@@ -50,6 +50,16 @@ export function siteCacheTag(slug: string): string {
   return `site:${slug}`;
 }
 
+/**
+ * The cache tag for the sitemap (task 8.2).
+ *
+ * Separate from `siteCacheTag` because it is invalidated by a different event:
+ * the sitemap changes when a site *joins or leaves* the published set, not
+ * when its content changes. Publishing and suspending do both at once, which
+ * is why `revalidateSite` updates this alongside the per-site tag.
+ */
+export const SITEMAP_CACHE_TAG = "sitemap";
+
 /** The bare prefix, without the leading slash — the URL-segment form. */
 const TEDX_SEGMENT_PREFIX = "tedx";
 

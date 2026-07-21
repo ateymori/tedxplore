@@ -73,21 +73,39 @@ export async function findLiveSiteBySlug(slug: string): Promise<LiveSiteRow | nu
   };
 }
 
+export interface LiveSiteSummary {
+  slug: string;
+  /**
+   * When the live snapshot was created — i.e. when this URL last changed for
+   * the public.
+   *
+   * Deliberately not `Event.updatedAt`: that moves on every autosave, and a
+   * sitemap claiming a page changed because someone typed in a draft they
+   * never submitted is a lie that trains crawlers to ignore the field.
+   */
+  lastModified: Date;
+}
+
 /**
- * Every slug that is live right now, for `generateStaticParams` (task 8.1).
+ * Every site that is live right now — the prerender list (task 8.1) and the
+ * sitemap (task 8.2) are the same query.
  *
- * Ordered so the build's prerender list is stable between runs — an unordered
+ * Ordered so the build's prerender list is stable between runs; an unordered
  * `findMany` would reshuffle the build output for no reason and make deploy
  * diffs unreadable.
  */
-export async function listLiveSlugs(): Promise<string[]> {
+export async function listLiveSites(): Promise<LiveSiteSummary[]> {
   const events = await prisma.event.findMany({
     where: { deletedAt: null, publicationStatus: "PUBLISHED", liveSnapshotId: { not: null } },
-    select: { slug: true },
+    select: { slug: true, liveSnapshot: { select: { createdAt: true } } },
     orderBy: { slug: "asc" },
   });
 
-  return events.map((event) => event.slug);
+  return events.flatMap((event) =>
+    event.liveSnapshot === null
+      ? []
+      : [{ slug: event.slug, lastModified: event.liveSnapshot.createdAt }],
+  );
 }
 
 /** Publication history for the admin event detail view (FR-43). */

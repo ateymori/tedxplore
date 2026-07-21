@@ -126,7 +126,9 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
   **Outcome.** `[site]/page.tsx` + `[site]/not-found.tsx`, `site-service.ts`, and `findLiveSiteBySlug`/`listLiveSlugs` in the snapshot repository. The caching contract deferred from 8.0 is settled: `getLiveSite` is a `use cache` function carrying `cacheLife("days")` + `cacheTag(siteCacheTag(slug))`, so Phase 7's four `updateTag` calls stop being inert. `generateStaticParams` is declared **for the status code, not the prerendering** — without it `params` is runtime data that must be read below a Suspense boundary, which would cost this route its 404 exactly as it cost `/preview/[token]`. `scripts/verify-8-1.ts` proves the seam end to end over HTTP: suspend without revalidating → still served (so the cache is real), then revalidate → dark on the very next request (FR-44). 12 checks.
 
-- [ ] 8.2 (S) SEO: per-site metadata, Open Graph/Twitter cards from event imagery, canonical URLs; sitemap of published sites; robots rules (exclude previews).
+- [x] 8.2 (S) SEO: per-site metadata, Open Graph/Twitter cards from event imagery, canonical URLs; sitemap of published sites; robots rules (exclude previews).
+
+  **Outcome.** `generateMetadata` on `[site]`, `lib/site-metadata.ts` (pure description/card rules, 11 tests), `app/sitemap.ts`, `app/robots.ts`. The site title escapes the root layout's `%s · Tedxplore` template via `title.absolute` — a published site belongs to its organizers. The sitemap is tagged `SITEMAP_CACHE_TAG` and `revalidateSite` now updates it too, so approve/unpublish/suspend/restore refresh the sitemap through the call they already make. `scripts/verify-8-2.ts`, 31 checks, including fetching the generated OG image to confirm it resolves.
 - [ ] 8.3 (S) Snapshot schema-version upgrader scaffold (v1 passthrough) so old snapshots keep rendering after future `EventContent` changes.
 
 **Exit:** published sites load fast globally with correct SEO and lifecycle behavior.

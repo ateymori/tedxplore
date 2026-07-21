@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { LiveSiteRow } from "@/server/repositories/snapshot-repository";
-import { findLiveSiteBySlug, listLiveSlugs } from "@/server/repositories/snapshot-repository";
+import type { LiveSiteRow, LiveSiteSummary } from "@/server/repositories/snapshot-repository";
+import { findLiveSiteBySlug, listLiveSites } from "@/server/repositories/snapshot-repository";
 
 /**
  * The public event site (FR-28, FR-42, task 8.1).
@@ -33,15 +33,22 @@ export async function loadLiveSite(slug: string): Promise<LiveSite | null> {
 }
 
 /**
- * The slugs to prerender at build time.
+ * Every live site — the route's prerender list (8.1) and the sitemap (8.2).
  *
- * Not an exhaustive list of what the route serves: a site published after the
- * build is rendered on its first request and written to disk from then on, so
- * this is a warm-start optimization rather than a routing rule. That is also
- * why there is no `dynamicParams = false` on the route — turning it into a
- * routing rule would mean every newly approved event 404s until the next
- * deploy, which is precisely the failure `updateTag` exists to prevent.
+ * For the route this is not an exhaustive list of what gets served: a site
+ * published after the build is rendered on its first request and written to
+ * disk from then on, so it is a warm-start optimization rather than a routing
+ * rule. That is also why there is no `dynamicParams = false` on the route —
+ * turning it into a routing rule would mean every newly approved event 404s
+ * until the next deploy, precisely the failure `updateTag` exists to prevent.
+ *
+ * For the sitemap it *is* exhaustive, and it is the only place the platform
+ * enumerates event sites publicly. Anything not live is absent, which is what
+ * keeps unpublished and suspended URLs out of search results (FR-42) rather
+ * than merely un-followed.
  */
-export async function listPublishedSiteSlugs(): Promise<string[]> {
-  return listLiveSlugs();
+export type PublishedSite = LiveSiteSummary;
+
+export async function listPublishedSites(): Promise<PublishedSite[]> {
+  return listLiveSites();
 }
