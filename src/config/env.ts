@@ -29,6 +29,15 @@ const serverEnvSchema = z
     RESEND_API_KEY: z.string().min(1).optional(),
     // Full RFC 5322 form, e.g. `Tedxplore <no-reply@tedxplore.com>`.
     EMAIL_FROM: z.string().min(1).optional(),
+
+    // Cloudinary (FR-20..FR-23). Optional for the same reason as the two
+    // above: the app must stay runnable before the account exists. Unset means
+    // uploads are refused with a clear message and every image slot renders its
+    // FR-38 fallback — the cloud name is read separately, from
+    // `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, because the browser builds delivery
+    // URLs and so must see it too.
+    CLOUDINARY_API_KEY: z.string().min(1).optional(),
+    CLOUDINARY_API_SECRET: z.string().min(1).optional(),
   })
   .refine((env) => Boolean(env.GOOGLE_CLIENT_ID) === Boolean(env.GOOGLE_CLIENT_SECRET), {
     error:
@@ -38,6 +47,11 @@ const serverEnvSchema = z
   .refine((env) => !env.RESEND_API_KEY || Boolean(env.EMAIL_FROM), {
     error: "EMAIL_FROM is required whenever RESEND_API_KEY is set",
     path: ["EMAIL_FROM"],
+  })
+  .refine((env) => Boolean(env.CLOUDINARY_API_KEY) === Boolean(env.CLOUDINARY_API_SECRET), {
+    error:
+      "CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must be set together (or both left unset to disable uploads)",
+    path: ["CLOUDINARY_API_KEY"],
   });
 
 function loadServerEnv() {
@@ -65,6 +79,17 @@ export const isGoogleOAuthConfigured =
 export const isEmailConfigured = serverEnv.RESEND_API_KEY !== undefined;
 
 /**
+ * Uploads need all three values: the two secrets to sign a request, and the
+ * cloud name to address it. The cloud name is `NEXT_PUBLIC_` and therefore
+ * lives in `config/site.ts`'s half of the world, but the *decision* about
+ * whether uploading is possible belongs here, next to the other integrations.
+ */
+export const isCloudinaryConfigured =
+  serverEnv.CLOUDINARY_API_KEY !== undefined &&
+  serverEnv.CLOUDINARY_API_SECRET !== undefined &&
+  Boolean(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
+
+/**
  * Guards against shipping the degraded modes to production by accident.
  *
  * Deliberately *not* run at build time: `next build` executes module scope with
@@ -77,6 +102,10 @@ export function assertProductionIntegrations(): void {
 
   const missing: string[] = [];
   if (!isEmailConfigured) missing.push("RESEND_API_KEY");
+  // A production deployment where organizers cannot add a single image is not
+  // a degraded mode worth allowing.
+  if (!isCloudinaryConfigured)
+    missing.push("CLOUDINARY_API_KEY / NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME");
 
   if (missing.length > 0) {
     throw new Error(`Missing required production environment variables: ${missing.join(", ")}`);

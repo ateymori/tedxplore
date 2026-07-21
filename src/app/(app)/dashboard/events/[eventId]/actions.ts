@@ -2,6 +2,7 @@
 
 import { getAuthenticatedUser } from "@/server/auth-guards";
 import * as contentService from "@/server/services/content-service";
+import * as mediaService from "@/server/services/media-service";
 import type {
   ContentSaveResult,
   ListItemResult,
@@ -241,4 +242,35 @@ export async function reorderFaqsAction(eventId: string, input: unknown): SaveRe
   if (!auth.ok) return auth;
 
   return contentService.reorderFaqs(auth.value, eventId, input);
+}
+
+// ---------------------------------------------------------------------------
+// Images (task 5.4)
+// ---------------------------------------------------------------------------
+
+export async function createImageUploadTicketAction(
+  eventId: string,
+  slot: unknown,
+): Promise<Result<mediaService.UploadTicket>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  return mediaService.createImageUploadTicket(auth.value, eventId, slot);
+}
+
+export async function attachImageAction(
+  eventId: string,
+  input: unknown,
+): Promise<Result<ContentSaveResult & { publicId: string; width: number; height: number }>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  return mediaService.attachImage(auth.value, eventId, input);
+}
+
+export async function removeImageAction(eventId: string, input: unknown): SaveResult {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  return mediaService.removeImage(auth.value, eventId, input);
 }

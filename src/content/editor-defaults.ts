@@ -1,5 +1,5 @@
 import type { EventDraft } from "@/content/serializer";
-import { socialLinkSchema, type SocialLink } from "@/content/event-content";
+import { socialLinkSchema, type ImageRef, type SocialLink } from "@/content/event-content";
 import { utcToZonedWallTime } from "@/lib/datetime";
 import type {
   AboutContentInput,
@@ -57,6 +57,16 @@ function socialLinks(raw: unknown): SocialLink[] {
   });
 }
 
+/** Drops the draft row's extra columns down to what a template would render. */
+function imageRef(image: { cloudinaryPublicId: string; width: number; height: number } | null) {
+  if (image === null) return null;
+  return {
+    cloudinaryPublicId: image.cloudinaryPublicId,
+    width: image.width,
+    height: image.height,
+  };
+}
+
 export interface SpeakerRow extends SpeakerContentInput {
   id: string;
 }
@@ -75,6 +85,13 @@ export interface FaqRow extends FaqContentInput {
 
 export interface EditorDefaults {
   hero: HeroContentInput;
+  /**
+   * The two image slots that live on the event row itself. Kept beside the
+   * text sections rather than inside them because images are not part of the
+   * autosave forms — see `ImageField`.
+   */
+  heroImage: ImageRef | null;
+  venueImage: ImageRef | null;
   about: AboutContentInput;
   schedule: ScheduleContentInput;
   contact: ContactContentInput;
@@ -96,6 +113,9 @@ export function draftToEditorDefaults(draft: EventDraft): EditorDefaults {
       displayName: draft.displayName,
       theme: value(draft.theme),
     },
+
+    heroImage: imageRef(draft.heroImage),
+    venueImage: imageRef(draft.venueImage),
 
     about: { aboutText: value(draft.aboutText) },
 

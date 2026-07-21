@@ -103,10 +103,18 @@ export function EditorShell({
           </Alert>
         ) : null}
 
-        <HeroSection {...sectionProps} defaultValues={defaults.hero} />
+        <HeroSection
+          {...sectionProps}
+          defaultValues={defaults.hero}
+          initialImage={defaults.heroImage}
+        />
         <AboutSection {...sectionProps} defaultValues={defaults.about} />
         <ScheduleSection {...sectionProps} defaultValues={defaults.schedule} />
-        <VenueSection {...sectionProps} defaultValues={defaults.venue} />
+        <VenueSection
+          {...sectionProps}
+          defaultValues={defaults.venue}
+          initialImage={defaults.venueImage}
+        />
         <ContactSection {...sectionProps} defaultValues={defaults.contact} />
         <RegistrationSection {...sectionProps} defaultValues={defaults.registration} />
       </div>

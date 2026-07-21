@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { saveHeroAction } from "@/app/(app)/dashboard/events/[eventId]/actions";
 import { EditorSection } from "@/components/editor/editor-section";
+import { ImageField } from "@/components/editor/image-field";
 import { useAutosave } from "@/components/editor/use-autosave";
+import type { ImageRef } from "@/content/event-content";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { THEME_MAX_LENGTH } from "@/config/limits";
@@ -32,14 +35,19 @@ import {
 export function HeroSection({
   eventId,
   defaultValues,
+  initialImage,
   initialUpdatedAt,
   onConflict,
 }: {
   eventId: string;
   defaultValues: HeroContentInput;
+  initialImage: ImageRef | null;
   initialUpdatedAt: Date;
   onConflict: () => void;
 }) {
+  // Image state lives outside the form: uploads are atomic and immediate, not
+  // debounced text (see `ImageField`).
+  const [heroImage, setHeroImage] = useState(initialImage);
   const form = useForm<HeroContentInput, unknown, HeroContentValues>({
     resolver: zodResolver(heroContentSchema),
     defaultValues,
@@ -113,6 +121,13 @@ export function HeroSection({
           </FieldDescription>
         )}
       </Field>
+
+      <ImageField
+        eventId={eventId}
+        slot={{ kind: "HERO" }}
+        value={heroImage}
+        onChange={setHeroImage}
+      />
     </EditorSection>
   );
 }

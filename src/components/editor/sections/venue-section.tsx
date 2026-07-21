@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { saveVenueAction } from "@/app/(app)/dashboard/events/[eventId]/actions";
 import { EditorSection } from "@/components/editor/editor-section";
+import { ImageField } from "@/components/editor/image-field";
 import { useAutosave } from "@/components/editor/use-autosave";
+import type { ImageRef } from "@/content/event-content";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,14 +25,17 @@ import type { VenueContentInput } from "@/lib/validation/content";
 export function VenueSection({
   eventId,
   defaultValues,
+  initialImage,
   initialUpdatedAt,
   onConflict,
 }: {
   eventId: string;
   defaultValues: VenueContentInput;
+  initialImage: ImageRef | null;
   initialUpdatedAt: Date;
   onConflict: () => void;
 }) {
+  const [venueImage, setVenueImage] = useState(initialImage);
   const form = useForm<VenueContentInput>({
     resolver: zodResolver(venueContentSchema),
     defaultValues,
@@ -106,6 +112,13 @@ export function VenueSection({
           </FieldDescription>
         )}
       </Field>
+
+      <ImageField
+        eventId={eventId}
+        slot={{ kind: "VENUE" }}
+        value={venueImage}
+        onChange={setVenueImage}
+      />
     </EditorSection>
   );
 }
