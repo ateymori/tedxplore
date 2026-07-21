@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ExternalLink, Pencil, Settings } from "lucide-react";
+import { ExternalLink, Eye, Pencil, Settings } from "lucide-react";
 
 import { DeleteEventDialog } from "@/components/events/delete-event-dialog";
 import { PublicationStatusBadge, ReviewStatusBadge } from "@/components/events/event-status";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { eventPath, eventSettingsPath } from "@/config/routes";
+import { eventPath, eventPreviewPath, eventSettingsPath } from "@/config/routes";
 import { tedxSitePath } from "@/config/site";
 import type { PublicationStatus, PublishRequestStatus } from "@/generated/prisma/enums";
 import { formatRelativeTime } from "@/lib/format";
@@ -85,6 +85,15 @@ export function EventCard({ event, now }: { event: EventCardData; now: Date }) {
           >
             <Pencil />
             Edit content
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href={eventPreviewPath(event.id)} target="_blank" rel="noreferrer" />}
+          >
+            <Eye />
+            Preview
           </Button>
           <Button
             variant="ghost"

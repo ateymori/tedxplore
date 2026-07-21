@@ -43,6 +43,23 @@ export function eventSettingsPath(eventId: string): string {
 }
 
 /**
+ * The owner's draft preview (FR-24, task 5.7).
+ *
+ * Deliberately *not* under `/dashboard`: that prefix carries the application
+ * chrome — nav, constrained `<main>` — and the whole promise of this page is
+ * that it is identical to the published site. A route outside the `(app)`
+ * group is the only way to escape a parent layout in the App Router.
+ *
+ * It shares the `/preview` namespace with Phase 6's tokenized links
+ * (`/preview/[token]`). `draft` is a static segment, so it always wins against
+ * the dynamic one — and grouping the two means both can share the same
+ * `noindex` rules and rendering path as Phase 6 builds out.
+ */
+export function eventPreviewPath(eventId: string): string {
+  return `/preview/draft/${eventId}`;
+}
+
+/**
  * A template's Live Preview (FR-50) — its `demoContent` rendered through the
  * real public renderer.
  *

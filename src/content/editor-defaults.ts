@@ -67,16 +67,27 @@ function imageRef(image: { cloudinaryPublicId: string; width: number; height: nu
   };
 }
 
+/*
+ * Row types are the form's input shape plus the two things the form does not
+ * own: the database id, and the image. Images are attached by their own
+ * request rather than by the row's autosave (see `ImageField`), so keeping
+ * them beside the form values rather than inside them is what stops a text
+ * save from ever carrying a stale photo reference.
+ */
+
 export interface SpeakerRow extends SpeakerContentInput {
   id: string;
+  photo: ImageRef | null;
 }
 
 export interface TeamMemberRow extends TeamMemberContentInput {
   id: string;
+  photo: ImageRef | null;
 }
 
 export interface SponsorRow extends SponsorContentInput {
   id: string;
+  logo: ImageRef | null;
 }
 
 export interface FaqRow extends FaqContentInput {
@@ -159,6 +170,7 @@ export function draftToEditorDefaults(draft: EventDraft): EditorDefaults {
       talkTitle: value(speaker.talkTitle),
       bio: value(speaker.bio),
       links: socialLinks(speaker.links),
+      photo: imageRef(speaker.photo),
     })),
 
     team: bySortOrder(draft.teamMembers).map((member) => ({
@@ -166,6 +178,7 @@ export function draftToEditorDefaults(draft: EventDraft): EditorDefaults {
       name: member.name,
       role: value(member.role),
       links: socialLinks(member.links),
+      photo: imageRef(member.photo),
     })),
 
     sponsors: bySortOrder(draft.sponsors).map((sponsor) => ({
@@ -175,6 +188,7 @@ export function draftToEditorDefaults(draft: EventDraft): EditorDefaults {
       // system only; the value is already constrained by the database.
       tier: sponsor.tier as SponsorRow["tier"],
       websiteUrl: value(sponsor.websiteUrl),
+      logo: imageRef(sponsor.logo),
     })),
 
     faqs: bySortOrder(draft.faqs).map((faq) => ({

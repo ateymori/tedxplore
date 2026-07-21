@@ -5,9 +5,13 @@ import { RefreshCw, TriangleAlert } from "lucide-react";
 
 import { AboutSection } from "@/components/editor/sections/about-section";
 import { ContactSection } from "@/components/editor/sections/contact-section";
+import { FaqsSection } from "@/components/editor/sections/faqs-section";
 import { HeroSection } from "@/components/editor/sections/hero-section";
 import { RegistrationSection } from "@/components/editor/sections/registration-section";
 import { ScheduleSection } from "@/components/editor/sections/schedule-section";
+import { SpeakersSection } from "@/components/editor/sections/speakers-section";
+import { SponsorsSection } from "@/components/editor/sections/sponsors-section";
+import { TeamSection } from "@/components/editor/sections/team-section";
 import { VenueSection } from "@/components/editor/sections/venue-section";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -30,6 +34,10 @@ const SECTIONS = [
   { id: "about", label: "About" },
   { id: "schedule", label: "Date and time" },
   { id: "venue", label: "Venue" },
+  { id: "speakers", label: "Speakers" },
+  { id: "team", label: "Team" },
+  { id: "sponsors", label: "Sponsors" },
+  { id: "faqs", label: "FAQ" },
   { id: "contact", label: "Contact" },
   { id: "registration", label: "Registration" },
 ] as const;
@@ -115,6 +123,10 @@ export function EditorShell({
           defaultValues={defaults.venue}
           initialImage={defaults.venueImage}
         />
+        <SpeakersSection {...sectionProps} initialItems={defaults.speakers} />
+        <TeamSection {...sectionProps} initialItems={defaults.team} />
+        <SponsorsSection {...sectionProps} initialItems={defaults.sponsors} />
+        <FaqsSection {...sectionProps} initialItems={defaults.faqs} />
         <ContactSection {...sectionProps} defaultValues={defaults.contact} />
         <RegistrationSection {...sectionProps} defaultValues={defaults.registration} />
       </div>

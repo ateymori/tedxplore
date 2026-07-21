@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft, Eye, Settings } from "lucide-react";
 
 import { EditorShell } from "@/components/editor/editor-shell";
 import { PublicationStatusBadge } from "@/components/events/event-status";
 import { Button } from "@/components/ui/button";
-import { DASHBOARD_PATH, eventSettingsPath } from "@/config/routes";
+import { DASHBOARD_PATH, eventPreviewPath, eventSettingsPath } from "@/config/routes";
 import { tedxSitePath } from "@/config/site";
 import { draftToEditorDefaults } from "@/content/editor-defaults";
 import { requireUser } from "@/server/auth-guards";
@@ -66,14 +66,27 @@ export default async function EventEditorPage({
             <p className="font-mono text-sm text-muted-foreground">{tedxSitePath(event.slug)}</p>
           </div>
 
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<Link href={eventSettingsPath(event.id)} />}
-          >
-            <Settings />
-            Settings
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              // A new tab, deliberately: the editor keeps its scroll position
+              // and any in-flight autosave, and previewing repeatedly is the
+              // normal rhythm of filling this in.
+              render={<Link href={eventPreviewPath(event.id)} target="_blank" rel="noreferrer" />}
+            >
+              <Eye />
+              Preview
+            </Button>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={eventSettingsPath(event.id)} />}
+            >
+              <Settings />
+              Settings
+            </Button>
+          </div>
         </div>
 
         <p className="text-sm text-muted-foreground">
