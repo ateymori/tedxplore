@@ -108,16 +108,22 @@ export type ReportFormValues = z.infer<typeof reportFormSchema>;
 /**
  * What the server accepts (task 9.2).
  *
- * The form schema plus the two rules that belong only on the server: the
- * honeypot must be empty, and a blank email normalizes to `null` so the admin
- * inbox renders "no reply address" rather than an empty string.
+ * The form schema, plus normalizing a blank email to `null` so the admin inbox
+ * renders "no reply address" rather than an empty string.
+ *
+ * **The honeypot is deliberately not rejected here.** It is tempting to write
+ * `z.string().max(0)` and be done — but a schema failure is a `400`, while a
+ * real report is a `202`, and that difference is precisely the signal a bot
+ * needs to discover which field to stop filling in. The trap has to be
+ * accepted by validation and discarded *silently* by `report-service.ts`, so
+ * that every outcome a bot can observe looks like success.
+ *
+ * (Written the wrong way first; `scripts/verify-9-2.ts` caught the 400.)
  */
 export const reportSubmissionSchema = reportFormSchema.extend({
   reporterEmail: z
     .union([z.literal(""), z.email()])
     .transform((value) => (value === "" ? null : value)),
-
-  [REPORT_HONEYPOT_FIELD]: z.string().max(0),
 });
 
 export type ReportSubmission = z.infer<typeof reportSubmissionSchema>;

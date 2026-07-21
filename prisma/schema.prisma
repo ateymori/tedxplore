@@ -436,3 +436,33 @@ model Report {
   @@index([eventId, createdAt])
   @@map("report")
 }
+
+/// A fixed-window rate-limit counter (BR-15, tech-stack decision 5).
+///
+/// Postgres rather than Redis, deliberately: V1 needs two low-volume limits
+/// (report submission, preview-token guessing) and adding an Upstash
+/// dependency to serve them would be infrastructure bought ahead of need. The
+/// `RateLimiter` adapter is the seam that makes swapping it later a
+/// one-file change.
+///
+/// Rows are garbage, not records — they exist only until their window closes.
+/// `expiresAt` is indexed so both cleanup paths (opportunistic on write, plus
+/// the periodic sweep) are index scans rather than table scans.
+model RateLimitWindow {
+  id String @id @default(cuid())
+
+  /// Namespaced and pre-hashed by the caller, e.g. `report:{eventId}:{ipHash}`.
+  /// Unique because the window *is* the key — one row per subject per window.
+  key   String @unique
+  count Int    @default(1)
+
+  /// When this window closes. A row at or past this instant is treated as
+  /// absent, so an expired window never has to be cleaned up before it can be
+  /// reused — cleanup is purely about reclaiming space.
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("rate_limit_window")
+}
