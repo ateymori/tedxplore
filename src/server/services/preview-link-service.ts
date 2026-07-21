@@ -1,8 +1,10 @@
 import "server-only";
 
+import { PREVIEW_GUESS_MAX_PER_HOUR, PREVIEW_GUESS_WINDOW_MS } from "@/config/limits";
 import type { EventDraft } from "@/content/serializer";
 import type { SessionUser } from "@/server/auth";
 import { generatePreviewToken, isPreviewTokenShaped } from "@/lib/preview-token";
+import { rateLimiter } from "@/server/adapters/rate-limit";
 import { findEventById, findEventDraft } from "@/server/repositories/event-repository";
 import * as tokens from "@/server/repositories/preview-token-repository";
 import { loadManageable } from "@/server/services/event-service";
@@ -119,22 +121,61 @@ export async function revokePreviewLink(
  * it, and it is information the page has no reason to spend.
  *
  * The shape check runs first so that a probe at the namespace costs no query.
+ *
+ * ## Rate limiting the guessing (task 9.4)
+ *
+ * A shaped-but-invalid token is the shape of a guess, and each one costs a
+ * database lookup. `clientIp` bounds how many an address can force per hour
+ * (`PREVIEW_GUESS_MAX_PER_HOUR`), which is defence in depth on top of the
+ * 256-bit space and, more practically, a cap on the lookups and log noise a
+ * sprayer can generate.
+ *
+ * Three properties make it safe to apply here:
+ *
+ *   - **Only failures count.** A valid token resolves and returns before any
+ *     `consume`, so a legitimate viewer refreshing a live link never spends
+ *     against the limit. Only misses do.
+ *   - **The check is free and precedes the query.** `peek` is a single indexed
+ *     read with no write, so once an address is over budget its guesses are
+ *     turned away *before* the lookup — which is the database protection.
+ *   - **Being over the limit is still just `NOT_FOUND`.** A rate-limited guess
+ *     is indistinguishable from any other miss, so the limit leaks nothing it
+ *     is trying to protect. (Contrast the report endpoint, where the limit is
+ *     an honest 429 because the reporter needs to know their report didn't
+ *     land — here the guesser is owed no such courtesy.)
+ *
+ * `clientIp` is `null` when the address can't be determined (`clientIpFrom`);
+ * that path skips the limiter rather than sharing one bucket, exactly as report
+ * submission does.
  */
-export async function loadTokenPreview(token: string): Promise<Result<TokenPreview>> {
+export async function loadTokenPreview(
+  token: string,
+  clientIp: string | null,
+): Promise<Result<TokenPreview>> {
   const missing = err({ type: "NOT_FOUND" as const, resource: "preview link" });
 
+  // Malformed tokens cost no query, so spend no rate-limit write on them
+  // either — counting them would turn a free path into a database write and
+  // add load in the name of shedding it.
   if (!isPreviewTokenShaped(token)) return missing;
 
+  const guessKey = clientIp === null ? null : `preview-guess:${clientIp}`;
+
+  // Over budget: turn the guess away before it can touch the database.
+  if (guessKey !== null && !(await rateLimiter.peek(guessKey, PREVIEW_GUESS_MAX_PER_HOUR))) {
+    return missing;
+  }
+
   const eventId = await tokens.findEventIdByToken(token);
-  if (eventId === null) return missing;
+  if (eventId === null) return countMiss(guessKey, missing);
 
   // Soft-deleted events are filtered by the repository, so a link to one stops
   // working the moment the owner deletes it without any bookkeeping here.
   const event = await findEventById(eventId);
-  if (event === null) return missing;
+  if (event === null) return countMiss(guessKey, missing);
 
   const draft = await findEventDraft(eventId);
-  if (draft === null) return missing;
+  if (draft === null) return countMiss(guessKey, missing);
 
   return ok({
     eventId: event.id,
@@ -142,4 +183,18 @@ export async function loadTokenPreview(token: string): Promise<Result<TokenPrevi
     templateId: event.templateId,
     draft,
   });
+}
+
+/**
+ * Records a failed lookup against the guessing budget and returns the same
+ * `NOT_FOUND` the caller was going to return anyway.
+ *
+ * Written as a pass-through so the failure branches above stay one line each
+ * and cannot accidentally skip the accounting.
+ */
+async function countMiss<T>(guessKey: string | null, missing: Result<T>): Promise<Result<T>> {
+  if (guessKey !== null) {
+    await rateLimiter.consume(guessKey, PREVIEW_GUESS_MAX_PER_HOUR, PREVIEW_GUESS_WINDOW_MS);
+  }
+  return missing;
 }

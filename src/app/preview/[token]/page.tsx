@@ -1,8 +1,10 @@
 import { cache } from "react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { DraftSite } from "@/components/preview/draft-site";
+import { clientIpFrom } from "@/lib/client-ip";
 import { loadTokenPreview } from "@/server/services/preview-link-service";
 
 /**
@@ -60,10 +62,24 @@ import { loadTokenPreview } from "@/server/services/preview-link-service";
 
 /**
  * Resolving happens twice per request — once for the title, once for the body
- * — so it is wrapped in React's `cache` and costs one query. Same pattern as
- * `getCurrentUser` in the auth guards.
+ * — so it is wrapped in React's `cache` and costs one query. That memoization
+ * is also what keeps the task 9.4 rate limiter honest: the guessing budget is
+ * consumed as a side effect of the *first* call within the request, and the
+ * second (memoized) call re-uses the result without consuming again. One
+ * request, one lookup, one accounted guess. Same pattern as `getCurrentUser`.
  */
 const loadPreview = cache(loadTokenPreview);
+
+/**
+ * The requester's address, for the guessing rate limit. Read from headers here
+ * and passed down rather than reached for in the service, which stays runnable
+ * from a plain script (it takes the IP as an argument, exactly as report
+ * submission does). `headers()` is request data, which this route already is —
+ * it is uncached by design (FR-26) and streams behind `preview/loading.tsx`.
+ */
+async function requestIp(): Promise<string | null> {
+  return clientIpFrom(await headers());
+}
 
 export async function generateMetadata({
   params,
@@ -71,7 +87,7 @@ export async function generateMetadata({
   params: Promise<{ token: string }>;
 }): Promise<Metadata> {
   const { token } = await params;
-  const result = await loadPreview(token);
+  const result = await loadPreview(token, await requestIp());
 
   return {
     // FR-27, belt and braces: the meta tag here, the `X-Robots-Tag` header in
@@ -84,7 +100,7 @@ export async function generateMetadata({
 
 export default async function TokenPreviewPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const result = await loadPreview(token);
+  const result = await loadPreview(token, await requestIp());
 
   // Renders this segment's own `not-found.tsx` — a branded page *and* a real
   // 404. Unknown, malformed, revoked, and deleted all land there, and the

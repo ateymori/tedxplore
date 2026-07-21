@@ -54,6 +54,19 @@ export const PASSWORD_RESET_TTL_SECONDS = 60 * 60;
 
 export const PREVIEW_TOKEN_BYTES = 32; // 256-bit (BR business rules, tech-stack decision 6)
 
+/**
+ * Failed preview-token lookups tolerated per IP per hour (task 9.4).
+ *
+ * Not a brute-force defence in the cryptographic sense — 256 bits is
+ * unsweepable regardless — but a bound on how many database lookups an address
+ * spraying guesses can force, and how much log noise it can generate. Counted
+ * against *failures only*, so a legitimate viewer refreshing a valid link
+ * never approaches it; only someone producing misses does. Generous, because
+ * an honest visitor who pastes a stale link a few times must not be locked out.
+ */
+export const PREVIEW_GUESS_MAX_PER_HOUR = 20;
+export const PREVIEW_GUESS_WINDOW_MS = 60 * 60 * 1000;
+
 export const REPORT_RATE_LIMIT_MAX_PER_HOUR = 3; // per IP per site (BR-15)
 export const REPORT_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 

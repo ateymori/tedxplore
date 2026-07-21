@@ -99,6 +99,46 @@ export const auth = betterAuth({
     },
   },
 
+  /**
+   * Rate limiting the auth surface (task 9.4).
+   *
+   * Better Auth's own rate limiter rather than our `RateLimiter` adapter,
+   * chosen deliberately: it already knows every auth path and its semantics, so
+   * tightening the brute-forceable ones is a table of `customRules` rather than
+   * hand-parsing the `/api/auth/[...all]` catch-all and re-deriving what a
+   * "sign-in attempt" is. Our adapter still owns the two app-level surfaces it
+   * fits — report submission (9.2) and preview-token guessing (9.4).
+   *
+   * `storage: "database"` because the target is Vercel Fluid Compute: an
+   * in-memory counter (Better Auth's default) is per-instance, so it would
+   * reset on cold starts and split across concurrent instances — useless as a
+   * brute-force bound. This needs the `RateLimit` model in the Prisma schema.
+   *
+   * `enabled: true` forces it on in development too (Better Auth otherwise
+   * limits only in production), so the limits are exercised by the same code
+   * path that runs in prod and can be verified locally. The default window is
+   * deliberately loose; the `customRules` are where the security lives:
+   *
+   *   - sign-in:         5 / minute — stops password spraying without
+   *                      punishing a fat-fingered real user.
+   *   - sign-up:         5 / hour   — account-creation floods are the abuse.
+   *   - password reset:  3 / hour   — each attempt sends an email, so this
+   *                      also bounds using us as an email cannon at an address.
+   */
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
+    customRules: {
+      "/sign-in/email": { window: 60, max: 5 },
+      "/sign-up/email": { window: 60 * 60, max: 5 },
+      "/forget-password": { window: 60 * 60, max: 3 },
+      "/reset-password": { window: 60 * 60, max: 5 },
+    },
+    storage: "database",
+    modelName: "rateLimit",
+  },
+
   user: {
     additionalFields: {
       // Mirrors the `UserRole` Prisma enum. `input: false` is load-bearing:

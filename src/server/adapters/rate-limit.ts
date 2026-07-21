@@ -33,6 +33,17 @@ export interface RateLimitResult {
 
 export interface RateLimiter {
   consume(key: string, limit: number, windowMs: number): Promise<RateLimitResult>;
+
+  /**
+   * Whether another attempt would be allowed, *without* recording one.
+   *
+   * The point is to spend nothing on the check: a fresh subject has no row, so
+   * this is a single indexed read and — crucially — no write. It lets a caller
+   * short-circuit expensive work (a database lookup, in the preview-guessing
+   * case) before deciding whether the attempt is even worth counting, so the
+   * `consume` write only ever lands on attempts that got that far.
+   */
+  peek(key: string, limit: number): Promise<boolean>;
 }
 
 /**
@@ -87,6 +98,18 @@ class PostgresRateLimiter implements RateLimiter {
     const row = await this.upsert(key, resetAt);
 
     return { ok: row.count <= limit, used: row.count, resetAt: row.expiresAt };
+  }
+
+  async peek(key: string, limit: number): Promise<boolean> {
+    const row = await prisma.rateLimitWindow.findUnique({ where: { key } });
+
+    // No window, or one that has already closed, is the same as never having
+    // attempted — the next `consume` would open a fresh one.
+    if (row === null || row.expiresAt <= new Date()) return true;
+
+    // `< limit` rather than `<=` mirrors `consume`'s `<= limit`: after `limit`
+    // recorded attempts the count *is* the limit, and the budget is spent.
+    return row.count < limit;
   }
 
   private async upsert(key: string, resetAt: Date) {
