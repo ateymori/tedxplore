@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 import { PREVIEW_PATH_PREFIX } from "./src/config/routes";
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
+
   async headers() {
     return [
       {

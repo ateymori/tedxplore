@@ -2,8 +2,10 @@ import Link from "next/link";
 import { ArrowRight, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { templatePreviewPath } from "@/config/routes";
 import { templateEditHref } from "@/lib/template-links";
+import { getCurrentUser } from "@/server/auth-guards";
 import type { TemplateDefinition } from "@/templates/types";
 
 /**
@@ -19,16 +21,23 @@ import type { TemplateDefinition } from "@/templates/types";
  */
 export function TemplateCard({
   template,
-  isAuthenticated,
+  editAction,
 }: {
   template: TemplateDefinition;
   /**
-   * Decides only where **Edit** points, never what is *shown* — a signed-out
-   * visitor sees the same card and the same affordances, and discovers the
-   * account requirement at the point they act on it rather than by being told
-   * up front that they cannot.
+   * The **Edit** button, injected rather than rendered here (task 8.0).
+   *
+   * Where it points depends on the session (FR-51), and the session is the one
+   * thing on this page that cannot be prerendered. Passing it in as a slot lets
+   * the homepage stream *only this button* while the card — poster, name,
+   * description, Live Preview — is served static from the first byte. Rendering
+   * it inline would make the whole grid session-dependent to decide one `href`.
+   *
+   * Use `TemplateEditButton` (with `TemplateEditButtonSkeleton` as the Suspense
+   * fallback); the pair lives below so the button's styling stays next to the
+   * one it sits beside.
    */
-  isAuthenticated: boolean;
+  editAction: React.ReactNode;
 }) {
   const { Poster } = template;
 
@@ -56,14 +65,7 @@ export function TemplateCard({
             and a `<button>` announced as a button that navigates is a lie to
             assistive technology.
           */}
-          <Button
-            size="lg"
-            nativeButton={false}
-            render={<Link href={templateEditHref(template.id, isAuthenticated)} />}
-          >
-            Edit
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </Button>
+          {editAction}
 
           <Button
             size="lg"
@@ -91,4 +93,41 @@ export function TemplateCard({
       </div>
     </article>
   );
+}
+
+/**
+ * The **Edit** action (FR-51), streamed because its destination is a function
+ * of the session.
+ *
+ * Signed in it goes straight to event creation for this template; signed out it
+ * goes to login carrying a `returnTo` back to the same place. That rule is
+ * `templateEditHref` and is unchanged — this component only decides *when* the
+ * answer is known, not what it is.
+ *
+ * Reads the session itself rather than taking it as a prop so the page above it
+ * stays synchronous and fully prerenderable. `getCurrentUser` is request-cached,
+ * so N cards cost one session lookup.
+ */
+export async function TemplateEditButton({ templateId }: { templateId: string }) {
+  const user = await getCurrentUser();
+
+  return (
+    <Button
+      size="lg"
+      nativeButton={false}
+      render={<Link href={templateEditHref(templateId, user !== null)} />}
+    >
+      Edit
+      <ArrowRight aria-hidden="true" className="size-4" />
+    </Button>
+  );
+}
+
+/**
+ * Sized to match the resolved button exactly, so the card's action row does not
+ * shift when the real one swaps in — the whole point of streaming this rather
+ * than the grid was to keep the layout still.
+ */
+export function TemplateEditButtonSkeleton() {
+  return <Skeleton className="h-10 w-24 rounded-md" aria-hidden="true" />;
 }

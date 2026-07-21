@@ -1,8 +1,12 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
-import { TemplateCard } from "@/components/templates/template-card";
+import {
+  TemplateCard,
+  TemplateEditButton,
+  TemplateEditButtonSkeleton,
+} from "@/components/templates/template-card";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/config/site";
-import { getCurrentUser } from "@/server/auth-guards";
 import { listTemplates } from "@/templates/registry";
 
 /**
@@ -17,13 +21,17 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
 };
 
-export default async function Home() {
-  // Read once here rather than inside each card, and only to decide where the
-  // Edit buttons point (FR-51). Nothing about the page's *content* is
-  // session-dependent, so a signed-out visitor and a signed-in one see the
-  // same thing. `getCurrentUser` is React-cached, so the layout's own call
-  // costs nothing extra.
-  const user = await getCurrentUser();
+/**
+ * Synchronous, and deliberately so (task 8.0).
+ *
+ * Nothing about this page's *content* is session-dependent — a signed-out
+ * visitor and a signed-in one see the same headline, the same cards, the same
+ * copy. The only session-dependent thing is where each Edit button points
+ * (FR-51), so that button is the island that streams and the rest of the page
+ * prerenders. Reading the session here instead, as this page used to, would
+ * make the entire marketing surface dynamic to decide one `href` per card.
+ */
+export default function Home() {
   const templates = listTemplates();
 
   return (
@@ -56,7 +64,15 @@ export default async function Home() {
         */}
         <div className="mt-10 grid gap-8 sm:grid-cols-2">
           {templates.map((template) => (
-            <TemplateCard key={template.id} template={template} isAuthenticated={user !== null} />
+            <TemplateCard
+              key={template.id}
+              template={template}
+              editAction={
+                <Suspense fallback={<TemplateEditButtonSkeleton />}>
+                  <TemplateEditButton templateId={template.id} />
+                </Suspense>
+              }
+            />
           ))}
         </div>
       </section>

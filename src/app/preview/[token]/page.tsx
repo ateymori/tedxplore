@@ -20,14 +20,43 @@ import { loadTokenPreview } from "@/server/services/preview-link-service";
  */
 
 /**
- * Without this the route would be rendered once and served from the full route
- * cache, and FR-26's "revocation takes effect instantly" would quietly become
- * "revocation takes effect whenever that entry expires". A draft is also being
- * edited continuously, so a cached preview would show yesterday's copy. The
- * owner's preview next door gets this for free by reading cookies; this route
- * reads nothing, so it has to say so.
+ * There is deliberately no caching directive on this route.
+ *
+ * FR-26 requires revocation to take effect *instantly*, and a draft is being
+ * edited continuously, so a cached render would show a revoked link a live page
+ * and an unrevoked one yesterday's copy. Before Cache Components this had to be
+ * said out loud — `export const dynamic = "force-dynamic"` — because the route
+ * reads no cookies and would otherwise have been served from the full route
+ * cache forever.
+ *
+ * Under Cache Components uncached is the default: nothing renders from a cache
+ * unless it sits inside a `use cache` scope, and `loadPreview` does not. The
+ * guarantee survives the removal of that export, but it now rests on a default
+ * rather than a declaration — so the rule for this file is that **no
+ * `use cache` may ever wrap the token lookup**, however tempting that
+ * per-request database read starts to look.
+ *
+ * ## The 404 status was lost here, and it is not coming back cheaply
+ *
+ * `notFound()` below still renders this segment's branded `not-found.tsx`, but
+ * the response is now **200, not 404**. Once a Suspense fallback renders — and
+ * `preview/loading.tsx` is one — the server has already committed to `200 OK`
+ * and cannot revise the status; Next injects `<meta name="robots" content=
+ * "noindex">` instead. Getting the real status back would mean resolving the
+ * token before any boundary, which Cache Components refuses because that is an
+ * uncached database read (both `connection()` and dropping the boundary were
+ * tried; both fail the build with `blocking-route`).
+ *
+ * This was accepted deliberately rather than overlooked. What FR-26 actually
+ * protects — the draft ceasing to be served on the very next request — holds,
+ * and FR-27's noindex holds twice over (this page's metadata and the
+ * `X-Robots-Tag` header from `next.config.ts`). What is lost is the status
+ * line, which link checkers read and people do not.
+ *
+ * `scripts/verify-8-0.ts` pins all of this, including asserting the 200, so a
+ * future Next.js that makes the 404 reachable again will fail that script
+ * loudly rather than leaving this comment quietly wrong.
  */
-export const dynamic = "force-dynamic";
 
 /**
  * Resolving happens twice per request — once for the title, once for the body

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { findTemplate, listTemplates } from "@/templates/registry";
@@ -16,16 +17,6 @@ import { demoContent } from "@/templates/types";
  * Public and unauthenticated (FR-49): a visitor can evaluate the product and
  * leave without ever creating an account.
  */
-
-/**
- * Rebuilt hourly rather than at build time.
- *
- * The demo seed is a function of `now` — the event date sits a fixed number of
- * days ahead precisely so the countdown never rots into the "this event has
- * taken place" state (FR-39). A permanently cached render would defeat that
- * within four months.
- */
-export const revalidate = 3600;
 
 export function generateStaticParams() {
   return listTemplates().map((template) => ({ templateId: template.id }));
@@ -53,11 +44,42 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function TemplatePreviewPage({ params }: PageProps) {
   const { templateId } = await params;
-  const template = findTemplate(templateId);
 
   // An unknown id is an ordinary outcome here — this path is reachable by hand
   // and by stale links — so `findTemplate` returns null and we 404 rather than
   // throwing (see the registry's note).
+  //
+  // The check is deliberately *outside* the cached component below: `notFound()`
+  // works by throwing, and a throw is not a value a cache entry can hold. The
+  // lookup is a synchronous registry read, so doing it twice costs nothing.
+  if (findTemplate(templateId) === null) notFound();
+
+  return <DemoRender templateId={templateId} />;
+}
+
+/**
+ * Rebuilt hourly rather than frozen at build time.
+ *
+ * The demo seed is a function of `now` — the event date sits a fixed number of
+ * days ahead precisely so the countdown never rots into the "this event has
+ * taken place" state (FR-39). A permanently cached render would defeat that
+ * within four months, which is what `revalidate = 3600` bought before Cache
+ * Components replaced route segment configs with `use cache` + `cacheLife`.
+ *
+ * `new Date()` runs once per cache fill rather than once per request, and that
+ * is the same bargain the old export made: an hour-stale countdown on a
+ * fictional event, in exchange for not re-rendering the whole demo per visitor.
+ *
+ * `templateId` is passed as a plain string, not the `TemplateDefinition`:
+ * arguments to a cached function form its cache key and must be serializable,
+ * and the definition carries React components. The registry lookup is repeated
+ * inside instead.
+ */
+async function DemoRender({ templateId }: { templateId: string }) {
+  "use cache";
+  cacheLife("hours");
+
+  const template = findTemplate(templateId);
   if (template === null) notFound();
 
   const now = new Date();

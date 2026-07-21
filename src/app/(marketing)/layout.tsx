@@ -1,29 +1,46 @@
-import { SiteNav } from "@/components/site-nav";
+import { Suspense } from "react";
+
+import { SiteNavActions, SiteNavActionsSkeleton, SiteNavShell } from "@/components/site-nav";
 import { getCurrentUser } from "@/server/auth-guards";
 
 /**
  * Public pages: browsable without a session (FR-49), but the nav reflects one
  * when it exists.
  *
- * Reading the session here makes these pages dynamic, which 4.9 revisited and
- * kept. The nav must show the signed-in state in the first HTML — a client-side
- * `useSession()` would flash "Log In" at every returning visitor — and the
- * homepage's Edit buttons point somewhere different depending on the session
- * (FR-51), so the page could not be cached across viewers regardless.
+ * The nav must show the signed-in state in server-rendered HTML — a client-side
+ * `useSession()` would flash "Log In" at every returning visitor — so the
+ * session is still read on the server, never in the browser.
  *
- * The cost is small and bounded: `getCurrentUser` is React-cached, so the
- * layout and the page share one session lookup, the render ships no additional
- * client JavaScript, and nothing here blocks paint. Should the marketing
- * surface ever need CDN caching, the shape to move to is a static page with a
- * session-aware island — not a client-side session read for the whole tree.
+ * ## What task 8.0 changed
+ *
+ * Reading the session at the top of this layout used to make the whole
+ * marketing surface dynamic, which 4.9 noted and accepted. Under Cache
+ * Components that is no longer the trade on offer: the session read is now
+ * isolated to the streamed `MarketingNav`, so everything else — the wordmark,
+ * the headline, the template grid — prerenders as a static shell and is served
+ * from the first byte, with the nav's right-hand side arriving a beat later.
+ *
+ * This is precisely the "static page with a session-aware island" shape the
+ * previous note said to move to should this surface ever need CDN caching.
+ * Cache Components made it the path of least resistance, so it is taken now.
+ * The homepage's Edit buttons (FR-51) are the page's own session-aware island
+ * and are handled the same way there.
  */
-export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
-
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <SiteNav user={user} />
+      <SiteNavShell>
+        <Suspense fallback={<SiteNavActionsSkeleton />}>
+          <MarketingNav />
+        </Suspense>
+      </SiteNavShell>
+
       {children}
     </div>
   );
+}
+
+async function MarketingNav() {
+  const user = await getCurrentUser();
+  return <SiteNavActions user={user} />;
 }
