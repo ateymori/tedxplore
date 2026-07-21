@@ -7,6 +7,13 @@ export const SITE_DOMAIN = "tedxplore.com";
 export const SITE_DESCRIPTION =
   "A premium event website generated automatically from structured event data.";
 
+/**
+ * Where an organizer reaches a human. Named here because the suspension email
+ * is the one message with no in-app action attached to it — replying is the
+ * only route back, so the address must never be a hardcoded string that drifts.
+ */
+export const SUPPORT_EMAIL = `support@${SITE_DOMAIN}`;
+
 // Falls back to localhost for local dev; set in the environment for
 // preview/production deploys.
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -28,6 +35,20 @@ export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000
  * over `[site]`, so the catch-all never shadows the application.
  */
 export const TEDX_PATH_PREFIX = "/tedx";
+
+/**
+ * The cache tag for one public event site.
+ *
+ * Named here rather than at either end because two very distant pieces of code
+ * have to agree on it exactly: Phase 8's `[site]` route attaches it when it
+ * caches, and Phase 7's publishing actions revalidate it (`server/revalidate.ts`).
+ * A typo in either would not fail — it would just silently serve a suspended
+ * site until the next deploy, which is the worst possible failure mode for this
+ * particular string.
+ */
+export function siteCacheTag(slug: string): string {
+  return `site:${slug}`;
+}
 
 /** The bare prefix, without the leading slash — the URL-segment form. */
 const TEDX_SEGMENT_PREFIX = "tedx";

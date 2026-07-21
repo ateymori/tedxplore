@@ -56,3 +56,13 @@ export const PREVIEW_TOKEN_BYTES = 32; // 256-bit (BR business rules, tech-stack
 
 export const REPORT_RATE_LIMIT_MAX_PER_HOUR = 3; // per IP per site (BR-15)
 export const REPORT_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+// --- Admin review (Phase 7) -------------------------------------------------
+
+/**
+ * FR-33: a rejection reason must be long enough to act on. This is the entire
+ * body of the email the organizer receives, so "no" passing a non-empty check
+ * would be a dead end — see `lib/validation/review.ts`.
+ */
+export const REJECTION_REASON_MIN_LENGTH = 20;
+export const REJECTION_REASON_MAX_LENGTH = 2000;

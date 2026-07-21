@@ -46,3 +46,24 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 export function formatDate(date: Date): string {
   return dateFormatter.format(date);
 }
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+/**
+ * Date *and* time, for review-queue timestamps.
+ *
+ * Submissions and decisions frequently happen several times in one day, so the
+ * date alone would render a queue of identical-looking rows. Deliberately
+ * rendered in the viewer's own locale time zone — unlike an event's start time
+ * (`lib/datetime.ts`), which belongs to the event's city, an audit timestamp
+ * belongs to whoever is reading it.
+ */
+export function formatDateTime(date: Date): string {
+  return dateTimeFormatter.format(date);
+}

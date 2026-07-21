@@ -1,0 +1,24 @@
+{
+  // Running a service from a plain Node script — how every phase has been
+  // verified against the real database — needs two modules shimmed:
+  //
+  //   • `server-only` throws outside a React Server Component graph.
+  //   • `next/font/google` is a build-time transform with no runtime impl.
+  //
+  // Both are reached through the template registry, which `event-service`
+  // imports. tsx resolves them via CJS, so an ESM `register()` loader hook is
+  // never consulted — tsconfig `paths` is what actually works.
+  //
+  //   pnpm exec tsx --tsconfig tsconfig.script.json <script>.ts
+  //
+  // Do NOT reach for `--conditions=react-server`: it also swaps React for a
+  // build with no `createContext`, and lucide-react dies on import.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "server-only": ["./node_modules/server-only/empty.js"],
+      "next/font/google": ["./scripts/stubs/next-font-google.ts"]
+    }
+  }
+}

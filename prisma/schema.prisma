@@ -169,6 +169,15 @@ model Event {
 
   publicationStatus PublicationStatus @default(NEVER_PUBLISHED)
 
+  /// BR-10: the status suspension interrupted, so restoring returns the event
+  /// to where it actually was rather than guessing. NULL unless suspended.
+  ///
+  /// Stored rather than derived because `liveSnapshotId` cannot distinguish the
+  /// two cases — it is retained across an unpublish (BR-8a), so a suspended
+  /// site that was live and one the owner had already taken offline look
+  /// identical without it.
+  suspendedFromStatus PublicationStatus?
+
   /// BR-7: exactly one live snapshot; approval swaps this pointer atomically.
   liveSnapshotId String? @unique
 

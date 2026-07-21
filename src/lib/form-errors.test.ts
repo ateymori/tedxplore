@@ -52,7 +52,10 @@ describe("domainErrorToFormErrors", () => {
     { type: "UNAUTHENTICATED" },
     { type: "LIMIT_EXCEEDED", limit: 16, resource: "speakers" },
     { type: "PENDING_REQUEST_EXISTS" },
-    { type: "INCOMPLETE_CONTENT", fields: ["venue name"] },
+    {
+      type: "INCOMPLETE_CONTENT",
+      issues: [{ field: "venueName", section: "venue", message: "Add the venue name." }],
+    },
     { type: "INVALID_STATE", current: "PUBLISHED", attempted: "publish" },
     { type: "STALE_WRITE", updatedAt: new Date() },
     { type: "RATE_LIMITED", retryAfterMs: 1000 },
@@ -67,8 +70,23 @@ describe("domainErrorToFormErrors", () => {
     expect(
       domainErrorMessage({ type: "LIMIT_EXCEEDED", limit: 16, resource: "speakers" }),
     ).toContain("16");
-    expect(
-      domainErrorMessage({ type: "INCOMPLETE_CONTENT", fields: ["venue name", "event date"] }),
-    ).toContain("venue name, event date");
+  });
+
+  // FR-30 asks for a *list* of what's missing, so this one variant maps to one
+  // error per issue rather than collapsing to a single sentence.
+  it("gives INCOMPLETE_CONTENT one message per missing requirement", () => {
+    const errors = domainErrorToFormErrors({
+      type: "INCOMPLETE_CONTENT",
+      issues: [
+        { field: "venueName", section: "venue", message: "Add the venue name." },
+        { field: "eventDate", section: "schedule", message: "Set your event date and time." },
+      ],
+    });
+
+    expect(errors).toHaveLength(2);
+    expect(errors.map((error) => error.message)).toEqual([
+      "Add the venue name.",
+      "Set your event date and time.",
+    ]);
   });
 });

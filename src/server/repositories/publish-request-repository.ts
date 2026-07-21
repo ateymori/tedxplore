@@ -38,13 +38,32 @@ export async function findPendingRequest(eventId: string) {
   });
 }
 
-/** The admin review queue, oldest first (FR-43). */
+/**
+ * The admin review queue, oldest first (FR-43).
+ *
+ * Oldest first is the point, not a default: a review queue sorted newest-first
+ * starves the submissions that have already waited longest, which are exactly
+ * the ones an organizer is emailing about.
+ *
+ * The owner comes along for the ride so the queue can show who submitted
+ * without N additional queries — a reviewer triaging a list needs to recognize
+ * repeat submitters.
+ */
 export async function listPendingRequests() {
   return prisma.publishRequest.findMany({
     where: { status: "PENDING" },
     orderBy: { submittedAt: "asc" },
     include: {
-      event: { select: { id: true, slug: true, displayName: true, ownerId: true } },
+      event: {
+        select: {
+          id: true,
+          slug: true,
+          displayName: true,
+          ownerId: true,
+          publicationStatus: true,
+          owner: { select: { email: true, name: true } },
+        },
+      },
     },
   });
 }
@@ -129,4 +148,45 @@ export async function listRequestsForEvent(eventId: string) {
     where: { eventId },
     orderBy: { submittedAt: "desc" },
   });
+}
+
+/**
+ * One request with everything the review screen renders (task 7.2): the exact
+ * snapshot content, plus the event's identity and licensing attestation.
+ *
+ * The snapshot's `content` comes back raw here rather than parsed — the caller
+ * runs it through `eventContentSchema`, which is where the Phase 8 upgrader
+ * will hook in, so a reviewer and a visitor always see the same document
+ * through the same code path.
+ */
+export async function findRequestForReview(id: string) {
+  return prisma.publishRequest.findUnique({
+    where: { id },
+    include: {
+      snapshot: true,
+      reviewer: { select: { id: true, email: true, name: true } },
+      event: {
+        select: {
+          id: true,
+          slug: true,
+          displayName: true,
+          templateId: true,
+          ownerId: true,
+          publicationStatus: true,
+          liveSnapshotId: true,
+          deletedAt: true,
+          tedEventUrl: true,
+          licenseHolderName: true,
+          authorizationConfirmedAt: true,
+          createdAt: true,
+          owner: { select: { id: true, email: true, name: true, createdAt: true } },
+        },
+      },
+    },
+  });
+}
+
+/** How many requests are waiting, for the admin nav's badge. */
+export function countPendingRequests(): Promise<number> {
+  return prisma.publishRequest.count({ where: { status: "PENDING" } });
 }

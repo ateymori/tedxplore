@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, Settings } from "lucide-react";
 import { EditorShell } from "@/components/editor/editor-shell";
 import { PreviewLinkDialog } from "@/components/events/preview-link-dialog";
 import { PublicationStatusBadge } from "@/components/events/event-status";
+import { PublishPanel } from "@/components/events/publish-panel";
 import { Button } from "@/components/ui/button";
 import { DASHBOARD_PATH, eventPreviewPath, eventSettingsPath } from "@/config/routes";
 import { tedxSitePath } from "@/config/site";
@@ -14,6 +15,7 @@ import { requireUser } from "@/server/auth-guards";
 import { findEventDraft } from "@/server/repositories/event-repository";
 import { loadManageable } from "@/server/services/event-service";
 import { getPreviewLink } from "@/server/services/preview-link-service";
+import { getPublishStatus } from "@/server/services/publish-service";
 
 export const metadata: Metadata = { title: "Edit event" };
 
@@ -50,6 +52,11 @@ export default async function EventEditorPage({
   // failure here can only be the authorization we just passed, so it degrades
   // to "no link yet" rather than taking the editor down with it.
   const previewLink = await getPreviewLink(user, eventId);
+
+  // Task 7.1: which publishing actions apply, and what (if anything) is still
+  // missing under BR-14. Same reasoning as above — it can only fail the check we
+  // already passed, and the editor is still usable without the panel.
+  const publishStatus = await getPublishStatus(user, eventId);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
@@ -105,6 +112,10 @@ export default async function EventEditorPage({
           — leave anything blank and that section simply won&rsquo;t appear on your site.
         </p>
       </div>
+
+      {publishStatus.ok ? (
+        <PublishPanel eventId={event.id} slug={event.slug} status={publishStatus.value} />
+      ) : null}
 
       <EditorShell
         eventId={event.id}

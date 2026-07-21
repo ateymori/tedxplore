@@ -53,11 +53,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function TokenPreviewPage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
+export default async function TokenPreviewPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const result = await loadPreview(token);
 

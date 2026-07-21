@@ -22,7 +22,9 @@ export default function PreviewLinkNotFound() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
       <Link2Off className="size-10 text-muted-foreground" aria-hidden />
-      <h1 className="text-3xl font-semibold tracking-tight">This preview link isn&rsquo;t active</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">
+        This preview link isn&rsquo;t active
+      </h1>
       <p className="max-w-md text-lg text-muted-foreground">
         Preview links can be turned off or replaced by the event organizer. Ask them for a fresh
         link, and it will work right away.

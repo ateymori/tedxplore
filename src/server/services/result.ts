@@ -11,6 +11,8 @@
  * a competent user could cause it, it belongs in `DomainError`.
  */
 
+import type { CompletenessIssue } from "@/content/completeness";
+
 export type DomainError =
   /** The thing doesn't exist, or the caller isn't allowed to know it does. */
   | { type: "NOT_FOUND"; resource: string }
@@ -30,8 +32,18 @@ export type DomainError =
   | { type: "LIMIT_EXCEEDED"; limit: number; resource: string }
   /** BR-9: this event already has a pending publish request. */
   | { type: "PENDING_REQUEST_EXISTS" }
-  /** BR-14: submission blocked; `fields` names what is missing. */
-  | { type: "INCOMPLETE_CONTENT"; fields: string[] }
+  /**
+   * BR-14 / FR-30: submission blocked, with one issue per missing requirement.
+   *
+   * Carries `CompletenessIssue[]` rather than a list of field names, which is
+   * the one place `DomainError` reaches into a domain module. FR-30 asks for a
+   * *clear list of the missing fields*, and "clear" here means each item can
+   * link the organizer to the editor section that fixes it — which needs the
+   * section, not just a label. Flattening to strings at the error boundary
+   * would throw that away and force the UI to map messages back to sections by
+   * guesswork.
+   */
+  | { type: "INCOMPLETE_CONTENT"; issues: CompletenessIssue[] }
   /** The action doesn't apply in the event's current state (BR-6). */
   | { type: "INVALID_STATE"; current: string; attempted: string }
   /** Autosave conflict: another session wrote first (tech-stack decision 3). */

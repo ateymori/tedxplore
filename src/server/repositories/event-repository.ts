@@ -1,4 +1,6 @@
 import type { EventDraft } from "@/content/serializer";
+import type { Prisma } from "@/generated/prisma/client";
+import type { PublicationStatus } from "@/generated/prisma/enums";
 import type { TemplateDemoSeed } from "@/templates/types";
 
 import { prisma } from "./prisma";
@@ -131,6 +133,64 @@ export async function softDeleteEvent(id: string) {
   await prisma.event.update({ where: { id }, data: { deletedAt: new Date() } });
 }
 
+/**
+ * Publication state transitions (BR-6), all scoped to the status the caller
+ * believed the event was in.
+ *
+ * `updateMany` with a `from` filter rather than `update` by id: the service has
+ * already applied the rule from `publish-rules.ts`, but between that read and
+ * this write an admin may have suspended the event or a review may have
+ * approved it. Scoping the write makes the database settle it — `false` means
+ * the state moved underneath the caller, which is a result worth reporting, not
+ * a lost update to discover later.
+ */
+async function transitionStatus(
+  id: string,
+  from: readonly PublicationStatus[],
+  data: Prisma.EventUpdateManyMutationInput,
+): Promise<boolean> {
+  const { count } = await prisma.event.updateMany({
+    where: { id, deletedAt: null, publicationStatus: { in: [...from] } },
+    data,
+  });
+
+  return count > 0;
+}
+
+/**
+ * FR-35: offline, but the live snapshot pointer is deliberately kept — BR-8a
+ * republishing an unchanged snapshot needs no review, and that is only possible
+ * if we still know which snapshot it was.
+ */
+export function unpublishEvent(id: string): Promise<boolean> {
+  return transitionStatus(id, ["PUBLISHED"], { publicationStatus: "UNPUBLISHED" });
+}
+
+/** BR-8a: back live on the already-approved snapshot, no new review. */
+export function republishEvent(id: string): Promise<boolean> {
+  return transitionStatus(id, ["UNPUBLISHED"], { publicationStatus: "PUBLISHED" });
+}
+
+/**
+ * FR-44 / BR-10. Records the status being interrupted in the same statement, so
+ * there is no window in which an event is suspended with no memory of where it
+ * came back to.
+ */
+export function suspendEvent(id: string, from: PublicationStatus): Promise<boolean> {
+  return transitionStatus(id, ["PUBLISHED", "UNPUBLISHED"], {
+    publicationStatus: "SUSPENDED",
+    suspendedFromStatus: from,
+  });
+}
+
+/** BR-10: clears the memory as it uses it, so it can never go stale. */
+export function restoreEvent(id: string, to: PublicationStatus): Promise<boolean> {
+  return transitionStatus(id, ["SUSPENDED"], {
+    publicationStatus: to,
+    suspendedFromStatus: null,
+  });
+}
+
 /** BR-2: the public-site lookup. Soft-deleted events are invisible (FR-42). */
 export async function findEventBySlug(slug: string) {
   return prisma.event.findFirst({ where: { slug, deletedAt: null } });
@@ -234,4 +294,90 @@ export async function countEventChildren(eventId: string) {
   ]);
 
   return { speakers, teamMembers, sponsors, faqs };
+}
+
+/**
+ * The admin events index (task 7.6, FR-43).
+ *
+ * Soft-deleted events are *includable* here — the only query in the app that
+ * can see them. FR-13 keeps them for audit precisely so an admin can answer for
+ * what was published, and a view that hid them would make that retention
+ * pointless. It is opt-in rather than default so the ordinary case isn't
+ * cluttered with sites that no longer exist.
+ *
+ * `ownerIds` is resolved separately (`user-repository.findUserIdsMatching`) and
+ * OR'd with the slug match, so one search box means "slug or owner" without a
+ * join that would make the two conditions fight over the same index.
+ */
+export async function searchEvents(options: {
+  search?: string;
+  ownerIds?: string[];
+  includeDeleted?: boolean;
+  take?: number;
+}) {
+  const { search, ownerIds = [], includeDeleted = false, take = 50 } = options;
+
+  const matches =
+    search === undefined || search.length === 0
+      ? undefined
+      : {
+          OR: [
+            { slug: { contains: search, mode: "insensitive" as const } },
+            { displayName: { contains: search, mode: "insensitive" as const } },
+            ...(ownerIds.length > 0 ? [{ ownerId: { in: ownerIds } }] : []),
+          ],
+        };
+
+  return prisma.event.findMany({
+    where: {
+      ...(includeDeleted ? {} : { deletedAt: null }),
+      ...matches,
+    },
+    orderBy: { updatedAt: "desc" },
+    take,
+    select: {
+      id: true,
+      slug: true,
+      displayName: true,
+      publicationStatus: true,
+      deletedAt: true,
+      updatedAt: true,
+      createdAt: true,
+      owner: { select: { email: true, name: true } },
+      publishRequests: {
+        where: { status: "PENDING" },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+}
+
+/**
+ * One event with everything the admin detail view shows (FR-43).
+ *
+ * Unlike `findEventById`, this deliberately does *not* filter `deletedAt`: the
+ * whole point of the admin detail view is being able to look at an event that
+ * no longer exists publicly.
+ */
+export async function findEventForAdmin(id: string) {
+  return prisma.event.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      slug: true,
+      displayName: true,
+      templateId: true,
+      publicationStatus: true,
+      suspendedFromStatus: true,
+      liveSnapshotId: true,
+      deletedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      tedEventUrl: true,
+      licenseHolderName: true,
+      authorizationConfirmedAt: true,
+      owner: { select: { id: true, email: true, name: true, createdAt: true } },
+    },
+  });
 }

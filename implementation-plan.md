@@ -100,12 +100,12 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 **Goal:** the draft → review → live pipeline.
 
-- [ ] 7.1 (M) Submit flow: completeness check with actionable errors → snapshot creation → PublishRequest (enforce single pending) → cancel pending; status surfaced on dashboard + "submission received" email.
-- [ ] 7.2 (M) Admin review queue: pending list, request detail rendering the exact snapshot via template, ownership/licensing panel (TED URL, license holder, authorization timestamp).
-- [ ] 7.3 (M) Approve/reject services: atomic approval (live snapshot swap + status), required rejection reason; approval/rejection emails; cache revalidation on approval.
-- [ ] 7.4 (S) Owner controls: unpublish/republish (republish of an existing approved snapshot needs no review; changed content goes through review as normal).
-- [ ] 7.5 (S) Admin suspend/restore + suspension email + cache revalidation.
-- [ ] 7.6 (M) Admin events index: search by slug/owner, event detail (history of requests/snapshots), soft-deleted visibility.
+- [x] 7.1 (M) Submit flow: completeness check with actionable errors → snapshot creation → PublishRequest (enforce single pending) → cancel pending; status surfaced on dashboard + "submission received" email.
+- [x] 7.2 (M) Admin review queue: pending list, request detail rendering the exact snapshot via template, ownership/licensing panel (TED URL, license holder, authorization timestamp).
+- [x] 7.3 (M) Approve/reject services: atomic approval (live snapshot swap + status), required rejection reason; approval/rejection emails; cache revalidation on approval.
+- [x] 7.4 (S) Owner controls: unpublish/republish (republish of an existing approved snapshot needs no review; changed content goes through review as normal).
+- [x] 7.5 (S) Admin suspend/restore + suspension email + cache revalidation.
+- [x] 7.6 (M) Admin events index: search by slug/owner, event detail (history of requests/snapshots), soft-deleted visibility.
 
 **Exit:** full lifecycle demo: edit → submit → approve → live → edit → resubmit → reject → revise → approve.
 

@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { eventPath } from "@/config/routes";
+import { DASHBOARD_PATH, eventPath } from "@/config/routes";
 import { getAuthenticatedUser } from "@/server/auth-guards";
+import { revalidateSite } from "@/server/revalidate";
 import * as contentService from "@/server/services/content-service";
 import * as mediaService from "@/server/services/media-service";
 import * as previewLinkService from "@/server/services/preview-link-service";
+import * as publishService from "@/server/services/publish-service";
 import type {
   ContentSaveResult,
   ListItemResult,
@@ -313,6 +315,84 @@ export async function revokePreviewLinkAction(
 
   const result = await previewLinkService.revokePreviewLink(auth.value, eventId);
   if (result.ok) revalidatePath(eventPath(eventId));
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Publishing (tasks 7.1, 7.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * These revalidate for the same reason the preview-link actions do — each is a
+ * deliberate, occasional act whose result the editor and dashboard both render
+ * server-side.
+ *
+ * The two that change what the *public* sees additionally call
+ * `revalidateSite`, which drops Phase 8's cached copy of the event site. That
+ * call lives here rather than in the service because `next/cache` needs a
+ * request context and the services stay runnable from a plain Node script (see
+ * `server/revalidate.ts`).
+ */
+
+export async function submitForReviewAction(
+  eventId: string,
+): Promise<Result<publishService.SubmissionSummary>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  const result = await publishService.submitForReview(auth.value, eventId);
+  if (result.ok) {
+    revalidatePath(eventPath(eventId));
+    revalidatePath(DASHBOARD_PATH);
+  }
+
+  return result;
+}
+
+export async function cancelSubmissionAction(
+  eventId: string,
+): Promise<Result<{ requestId: string }>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  const result = await publishService.cancelSubmission(auth.value, eventId);
+  if (result.ok) {
+    revalidatePath(eventPath(eventId));
+    revalidatePath(DASHBOARD_PATH);
+  }
+
+  return result;
+}
+
+export async function unpublishEventAction(
+  eventId: string,
+): Promise<Result<publishService.SiteVisibilityChange>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  const result = await publishService.unpublishEvent(auth.value, eventId);
+  if (result.ok) {
+    revalidateSite(result.value.slug);
+    revalidatePath(eventPath(eventId));
+    revalidatePath(DASHBOARD_PATH);
+  }
+
+  return result;
+}
+
+export async function republishEventAction(
+  eventId: string,
+): Promise<Result<publishService.SiteVisibilityChange>> {
+  const auth = await getAuthenticatedUser();
+  if (!auth.ok) return auth;
+
+  const result = await publishService.republishEvent(auth.value, eventId);
+  if (result.ok) {
+    revalidateSite(result.value.slug);
+    revalidatePath(eventPath(eventId));
+    revalidatePath(DASHBOARD_PATH);
+  }
 
   return result;
 }

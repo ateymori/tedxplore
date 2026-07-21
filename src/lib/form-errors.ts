@@ -78,13 +78,15 @@ export function domainErrorToFormErrors(error: DomainError): FormError[] {
         },
       ];
 
+    // One form error per missing requirement, so a caller with nowhere to put a
+    // list still shows the first actionable sentence rather than a count. The
+    // submit UI does not come through here — it renders the issues directly,
+    // with a link to each section (see `publish-panel.tsx`).
     case "INCOMPLETE_CONTENT":
-      return [
-        {
-          field: ROOT_ERROR_FIELD,
-          message: `Still needed before submitting: ${error.fields.join(", ")}.`,
-        },
-      ];
+      return error.issues.map((issue) => ({
+        field: ROOT_ERROR_FIELD,
+        message: issue.message,
+      }));
 
     case "INVALID_STATE":
       return [

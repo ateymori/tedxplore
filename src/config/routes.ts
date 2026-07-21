@@ -103,6 +103,39 @@ export function templatePreviewPath(templateId: string): string {
   return `/templates/${encodeURIComponent(templateId)}/preview`;
 }
 
+// --- Admin area (Phase 7, FR-43) --------------------------------------------
+
+/** The review queue is the admin landing page — it is the work that has a queue. */
+export const REVIEW_QUEUE_PATH = ADMIN_PATH;
+
+/** One publish request, rendering the exact submitted snapshot (task 7.2). */
+export function reviewRequestPath(requestId: string): string {
+  return `${ADMIN_PATH}/review/${requestId}`;
+}
+
+/** The admin events index (task 7.6), searchable by slug or owner. */
+export const ADMIN_EVENTS_PATH = `${ADMIN_PATH}/events`;
+
+/** Search term for the admin events index. */
+export const ADMIN_SEARCH_PARAM = "q";
+
+/** Whether the index includes soft-deleted events (task 7.6). */
+export const ADMIN_INCLUDE_DELETED_PARAM = "deleted";
+
+export function adminEventsPath(query?: { search?: string; includeDeleted?: boolean }): string {
+  const params = new URLSearchParams();
+  if (query?.search) params.set(ADMIN_SEARCH_PARAM, query.search);
+  if (query?.includeDeleted) params.set(ADMIN_INCLUDE_DELETED_PARAM, "1");
+
+  const suffix = params.toString();
+  return suffix ? `${ADMIN_EVENTS_PATH}?${suffix}` : ADMIN_EVENTS_PATH;
+}
+
+/** One event's full administrative history (FR-43). */
+export function adminEventPath(eventId: string): string {
+  return `${ADMIN_EVENTS_PATH}/${eventId}`;
+}
+
 /** Query parameter carrying the post-authentication destination (task 2.4). */
 export const RETURN_TO_PARAM = "returnTo";
 
