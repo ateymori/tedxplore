@@ -53,6 +53,17 @@ export function siteCacheTag(slug: string): string {
 /** The bare prefix, without the leading slash — the URL-segment form. */
 const TEDX_SEGMENT_PREFIX = "tedx";
 
+/**
+ * The URL-segment form of a slug — `tedxmcgillu`, with no leading slash.
+ *
+ * The exact inverse of `parseTedxSegment`, and the value `generateStaticParams`
+ * hands back for the `[site]` param (task 8.1). Named here rather than
+ * assembled at the route so the round trip is one module's responsibility.
+ */
+export function tedxSiteSegment(slug: string): string {
+  return `${TEDX_SEGMENT_PREFIX}${slug}`;
+}
+
 export function tedxSitePath(slug: string): string {
   return `${TEDX_PATH_PREFIX}${slug}`;
 }

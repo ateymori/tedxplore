@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseTedxSegment, tedxSitePath, tedxSiteUrl } from "./site";
+import { parseTedxSegment, tedxSitePath, tedxSiteSegment, tedxSiteUrl } from "./site";
 
 describe("tedxSitePath", () => {
   it("builds a path on the main site, not a subdomain (BR-2)", () => {
@@ -9,6 +9,20 @@ describe("tedxSitePath", () => {
 
   it("builds an absolute URL under the app's own origin", () => {
     expect(tedxSiteUrl("mcgillu")).toBe("http://localhost:3000/tedxmcgillu");
+  });
+});
+
+describe("tedxSiteSegment", () => {
+  it("builds the bare route segment, with no leading slash", () => {
+    // This is the value `generateStaticParams` hands the `[site]` param; a
+    // leading slash there would prerender a path that never matches.
+    expect(tedxSiteSegment("mcgillu")).toBe("tedxmcgillu");
+  });
+
+  it("round-trips with parseTedxSegment", () => {
+    for (const slug of ["mcgillu", "demoevent", "ab", "plore"]) {
+      expect(parseTedxSegment(tedxSiteSegment(slug))).toBe(slug);
+    }
   });
 });
 
