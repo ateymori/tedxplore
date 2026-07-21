@@ -33,7 +33,12 @@ import { externalUrlSchema } from "@/lib/validation/url";
  * the template, and (from Phase 8) the snapshot upgrader move together.
  */
 
-/** Bump only for a breaking shape change; see the Phase 8 upgrader. */
+/**
+ * Bump only for a breaking shape change, and never alone: `content/upgrade.ts`
+ * needs a migration keyed to the version being left behind, or every snapshot
+ * already in the database stops rendering. Its doc comment lists the full
+ * checklist.
+ */
 export const CURRENT_SCHEMA_VERSION = 1;
 
 // ---------------------------------------------------------------------------

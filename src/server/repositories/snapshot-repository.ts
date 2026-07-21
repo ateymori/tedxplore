@@ -1,5 +1,5 @@
 import type { EventContent } from "@/content/event-content";
-import { eventContentSchema } from "@/content/event-content";
+import { upgradeSnapshotContent } from "@/content/upgrade";
 import type { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "./prisma";
@@ -25,17 +25,17 @@ export async function createSnapshot(eventId: string, content: EventContent) {
 /**
  * Reads a snapshot's content back.
  *
- * Re-validates on the way out rather than trusting the column: the row may
- * have been written by an older deployment, and a `Json` column carries no
- * type guarantees. From Phase 8 this is where the schema-version upgrader
- * hooks in — old snapshots get migrated forward in code here, so they keep
- * rendering after `EventContent` changes.
+ * Upgraded and re-validated on the way out rather than trusted: the row may
+ * have been written by a deployment that no longer exists, and a `Json` column
+ * carries no type guarantees. `upgradeSnapshotContent` (task 8.3) migrates an
+ * older document forward in code on every read — snapshots are immutable
+ * (invariant 3), so they are never rewritten in place.
  */
 export async function findSnapshotContent(id: string): Promise<EventContent | null> {
   const snapshot = await prisma.snapshot.findUnique({ where: { id } });
   if (snapshot === null) return null;
 
-  return eventContentSchema.parse(snapshot.content);
+  return upgradeSnapshotContent(snapshot.content);
 }
 
 /** Everything the public route needs to render one live site — and nothing more. */
@@ -69,7 +69,7 @@ export async function findLiveSiteBySlug(slug: string): Promise<LiveSiteRow | nu
 
   return {
     templateId: event.templateId,
-    content: eventContentSchema.parse(event.liveSnapshot.content),
+    content: upgradeSnapshotContent(event.liveSnapshot.content),
   };
 }
 

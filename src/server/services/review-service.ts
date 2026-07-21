@@ -3,7 +3,7 @@ import "server-only";
 import type { EventContent } from "@/content/event-content";
 import type { PublicationStatus, PublishRequestStatus } from "@/generated/prisma/enums";
 import type { SessionUser } from "@/server/auth";
-import { eventContentSchema } from "@/content/event-content";
+import { trySnapshotUpgrade } from "@/content/upgrade";
 import { rejectionSchema, suspensionSchema } from "@/lib/validation/review";
 import * as events from "@/server/repositories/event-repository";
 import * as requests from "@/server/repositories/publish-request-repository";
@@ -129,16 +129,13 @@ export async function getReviewDetail(
   const request = await requests.findRequestForReview(requestId);
   if (request === null) return err({ type: "NOT_FOUND", resource: "publish request" });
 
-  const parsed = eventContentSchema.safeParse(request.snapshot.content);
-  if (!parsed.success) {
-    // A snapshot that no longer parses is a deployment problem, not user input:
-    // it means `EventContent` changed without the upgrader being taught about
-    // it (invariant 2). Failing loudly is right — silently rendering a partial
-    // site would get it approved.
-    throw new Error(
-      `Snapshot ${request.snapshotId} does not match the current EventContent schema. ` +
-        `Phase 8's schema-version upgrader is what should be handling this.`,
-    );
+  const parsed = trySnapshotUpgrade(request.snapshot.content);
+  if (!parsed.ok) {
+    // A snapshot that cannot be brought to the current shape is a deployment
+    // problem, not user input: it means `EventContent` changed without the
+    // upgrader being taught about it (invariant 2). Failing loudly is right —
+    // silently rendering a partial site would get it approved.
+    throw new Error(`Snapshot ${request.snapshotId} cannot be rendered: ${parsed.error.message}`);
   }
 
   const { event } = request;
@@ -173,7 +170,7 @@ export async function getReviewDetail(
       name: event.owner.name.trim() || null,
       createdAt: event.owner.createdAt,
     },
-    content: parsed.data,
+    content: parsed.content,
     isLive: event.liveSnapshotId === request.snapshotId,
   });
 }

@@ -129,9 +129,12 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 - [x] 8.2 (S) SEO: per-site metadata, Open Graph/Twitter cards from event imagery, canonical URLs; sitemap of published sites; robots rules (exclude previews).
 
   **Outcome.** `generateMetadata` on `[site]`, `lib/site-metadata.ts` (pure description/card rules, 11 tests), `app/sitemap.ts`, `app/robots.ts`. The site title escapes the root layout's `%s · Tedxplore` template via `title.absolute` — a published site belongs to its organizers. The sitemap is tagged `SITEMAP_CACHE_TAG` and `revalidateSite` now updates it too, so approve/unpublish/suspend/restore refresh the sitemap through the call they already make. `scripts/verify-8-2.ts`, 31 checks, including fetching the generated OG image to confirm it resolves.
-- [ ] 8.3 (S) Snapshot schema-version upgrader scaffold (v1 passthrough) so old snapshots keep rendering after future `EventContent` changes.
 
-**Exit:** published sites load fast globally with correct SEO and lifecycle behavior.
+- [x] 8.3 (S) Snapshot schema-version upgrader scaffold (v1 passthrough) so old snapshots keep rendering after future `EventContent` changes.
+
+  **Outcome.** `content/upgrade.ts` — `upgradeSnapshotContent` (throws) and `trySnapshotUpgrade` (returns a result), now the single way snapshot JSON becomes `EventContent`: both repository reads and the admin review screen go through it. Migrations are typed against plain JSON, never `EventContent`, so a v1→v2 migration cannot silently change meaning when v3 lands. Upgrading happens on every read and never rewrites a row (invariant 3). The chain-walker is exported and driven with synthetic versions in tests, because at v1 the real table is empty and the real loop never executes — a scaffold nobody has run is a scaffold that will not work on the day it is needed. A snapshot from a _newer_ deployment is refused rather than partially parsed (reachable during a rolling deploy). 13 tests.
+
+**Exit:** published sites load fast globally with correct SEO and lifecycle behavior. — **met.** Lighthouse on `/tedxavelorne` against a production build: **94 performance / 100 accessibility / 100 best-practices / 100 SEO**, LCP 1.6s, CLS 0, TBT 0ms (desktop preset). For comparison, Phase 4 measured the same template at 90–91 with LCP 3.8s on the uncached preview route — the prerender plus the `use cache` entry is the difference. Lifecycle behavior verified over HTTP by `scripts/verify-8-1.ts` and `scripts/verify-8-2.ts`.
 
 ## Phase 9 — Reporting & Abuse Protection
 
