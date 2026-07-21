@@ -6,13 +6,39 @@ import { Button } from "@/components/ui/button";
 import { HOME_PATH } from "@/config/routes";
 import { signOut } from "@/lib/auth-client";
 
+/**
+ * Signing out.
+ *
+ * Better Auth returns failures as a value rather than throwing, so the result
+ * has to be checked. An earlier version navigated unconditionally, which made a
+ * *failed* sign-out indistinguishable from a successful one: the user landed on
+ * the homepage still holding a valid session, with the nav showing them signed
+ * in and no explanation. That is the worst possible failure for this particular
+ * button — someone on a shared machine has every reason to believe they are
+ * signed out when they are not.
+ *
+ * (Found for real: serving the app on a port other than the one in
+ * `NEXT_PUBLIC_APP_URL` makes Better Auth reject every auth mutation as
+ * `INVALID_ORIGIN`, and this button reported success anyway.)
+ */
 export function SignOutButton() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function handleClick() {
     setPending(true);
-    await signOut();
+    setFailed(false);
+
+    const { error } = await signOut();
+
+    if (error) {
+      // Stay put. Navigating away would hide the fact that the session is still
+      // live, which is the whole bug this guards against.
+      setPending(false);
+      setFailed(true);
+      return;
+    }
 
     // `refresh` discards the router cache as well as re-rendering: without it,
     // a cached authenticated page can be shown by a back navigation.
@@ -21,8 +47,17 @@ export function SignOutButton() {
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={handleClick} disabled={pending}>
-      {pending ? "Signing out…" : "Sign out"}
-    </Button>
+    <div className="flex items-center gap-2">
+      {failed ? (
+        // `role="alert"` so a screen reader announces it — the visual change is
+        // small and easy to miss next to a button that still says "Sign out".
+        <span role="alert" className="text-xs font-medium text-destructive">
+          Sign out failed
+        </span>
+      ) : null}
+      <Button variant="ghost" size="sm" onClick={handleClick} disabled={pending}>
+        {pending ? "Signing out…" : failed ? "Try again" : "Sign out"}
+      </Button>
+    </div>
   );
 }

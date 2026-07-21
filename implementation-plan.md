@@ -150,6 +150,7 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 - [ ] 10.1 (M) E2E smoke suite (Playwright): homepage → Live Preview; homepage → Edit → login → create → edit → submit → approve → public view; report flow; preview link flow.
 - [ ] 10.2 (S) Security pass: authorization audit on every action/handler, header hardening (CSP for public sites), URL/output sanitization review.
 - [ ] 10.3 (S) Accessibility + performance final audit (app and public template).
+  - **Carried over from Phase 8:** the root layout preloads Geist Sans and Geist Mono on public event sites, but Aurora sets its own `font-family` — so Geist Sans is on the critical path of every event site and never rendered. (Geist Mono _is_ used, by the countdown's `font-mono`.) Phase 4 flagged this for Phase 8's `[site]` route; Phase 8 did not do it. A root layout cannot preload per-route, so the options are `preload: false` or moving the Geist declarations into the app/marketing/auth/admin layouts and giving Aurora its own mono. Baseline to beat: 94 performance, LCP 1.6s.
 - [ ] 10.4 (S) Operational polish: error monitoring hook points, structured logging in services, orphaned-media cleanup script.
 - [ ] 10.5 (S) Homepage polish: finalize value-proposition copy and SEO metadata around the template grid built in 4.9; verify the Live Preview and Edit → login → create-event handoff end-to-end (do not rebuild — the homepage itself ships in Phase 4).
 - [ ] 10.6 (S) Production env setup, domain, seed admin, launch checklist run.
