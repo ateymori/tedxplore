@@ -113,6 +113,10 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 **Goal:** fast, correct public rendering.
 
+- [ ] 8.0 (M) Enable Next.js Cache Components (`cacheComponents: true` in `next.config.ts`) and migrate the route-segment config it replaces. This is a prerequisite for 8.1, not part of it: `cacheTag` — and therefore the whole tag-based invalidation seam Phase 7 already built (`server/revalidate.ts`, `siteCacheTag`) — does nothing until the flag is on, so today those `updateTag` calls are verified-inert no-ops. Enabling it replaces `dynamic`, `revalidate`, and `fetchCache` route exports with the `use cache` directive plus `cacheLife`, which reaches two files outside this phase:
+  - `src/app/templates/[templateId]/preview/page.tsx` — `export const revalidate = 3600` (Phase 4).
+  - `src/app/preview/[token]/page.tsx` — `export const dynamic = "force-dynamic"` (Phase 6). CLAUDE.md records that export as load-bearing for FR-26's instant revocation. Under Cache Components uncached is the default, so the guarantee survives without it — but **re-verify FR-26 end to end and rewrite that decision note**, or it becomes a stale explanation of a line that no longer exists.
+    Follow the official migration guide rather than training data; confirm `updateTag` still fires from the four Phase 7 admin/owner actions afterwards.
 - [ ] 8.1 (M) Public site route: a top-level `src/app/[site]/` segment serving `tedxplore.com/tedx{slug}` as a path on the main app (not a subdomain). The segment arrives whole (`tedxmcgillu`); use `parseTedxSegment` from `config/site.ts` to strip the prefix — a folder named `tedx[slug]` does not work, partial dynamic segments are unsupported. Then resolve slug → live snapshot → render (`mode: "public"`); static rendering + cache tags, revalidated by approve/unpublish/suspend; branded unavailable page for all non-live states.
 - [ ] 8.2 (S) SEO: per-site metadata, Open Graph/Twitter cards from event imagery, canonical URLs; sitemap of published sites; robots rules (exclude previews).
 - [ ] 8.3 (S) Snapshot schema-version upgrader scaffold (v1 passthrough) so old snapshots keep rendering after future `EventContent` changes.
@@ -146,6 +150,7 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 - **Template before editor** (Phase 4 before 5) is deliberate: the editor's preview and the demo-content seed both depend on the template, and building the renderer first proves the `EventContent` contract before the editor writes to it.
 - **Public homepage (4.9) sits at the end of Phase 4**, not earlier or in Phase 10: Live Preview needs the template renderer + `demoContent` to exist, and Edit needs both the auth redirect support (2.4) and the create-event flow (3.1) already built. Phase 4 is the earliest point all three dependencies are satisfied.
 - Phases 4 and 5 are the bulk of the visible product; each of their tasks is independently reviewable.
+- **8.0 exists because Phase 7 shipped the invalidation half of a cache whose other half doesn't exist yet.** That was deliberate — it meant the approve/suspend actions never had to be revisited — but it does mean the caching model is decided _in Phase 8_, and that decision retroactively confirms or invalidates `server/revalidate.ts`. Settle 8.0 before writing any of 8.1.
 - Anything that touches the `EventContent` schema after Phase 1 must update the serializer, Zod schema, template, and (from Phase 8 on) the snapshot upgrader together — treated as one change.
 
 ## Definition of Done (every task)
