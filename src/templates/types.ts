@@ -39,6 +39,30 @@ export interface TemplateRenderProps {
    * not this one, and so ticks client-side.
    */
   now: Date;
+
+  /**
+   * The "Report this site" affordance (FR-45, task 9.1), or nothing.
+   *
+   * A slot rather than data, and that distinction is the whole point. FR-45
+   * wants the link inside the site's own footer, where it belongs visually —
+   * but a report has to name *which event* it concerns, and `EventContent`
+   * deliberately carries no event id or slug (C-1: a template is a function of
+   * its content and has no way to reach the database). Passing the identifier
+   * in would mean either adding a non-content field to `EventContent` — a
+   * schema version bump, a snapshot migration, and a permanent hole in the
+   * content/presentation separation — or handing the template something it
+   * could use to query with.
+   *
+   * A ready-made React node sidesteps both. The route decides *what* the
+   * affordance is and what it knows; the template decides only *where* it
+   * goes. Same shape as the homepage's `editAction` slot (task 8.0).
+   *
+   * Optional because only the public site has anything real to report: the
+   * homepage demo describes no actual event, and a preview is not published.
+   * Both pass nothing and the footer simply renders without it — so a template
+   * must treat this as absent-by-default, never assume it is there.
+   */
+  reportSlot?: React.ReactNode;
 }
 
 export type TemplateRenderer = ComponentType<TemplateRenderProps>;

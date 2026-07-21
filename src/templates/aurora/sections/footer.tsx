@@ -17,7 +17,15 @@ import { AuroraSocialLinks } from "../components/social-links";
  * (Phase 8), and a build-time year would silently go stale on a site nobody
  * republishes in January.
  */
-export function AuroraFooter({ content, now }: { content: EventContent; now: Date }) {
+export function AuroraFooter({
+  content,
+  now,
+  reportSlot,
+}: {
+  content: EventContent;
+  now: Date;
+  reportSlot?: React.ReactNode;
+}) {
   const { contact, displayName } = content;
 
   return (
@@ -59,6 +67,18 @@ export function AuroraFooter({ content, now }: { content: EventContent; now: Dat
               dark background is much darker than averaging the two suggests.
             */}
             <p className="text-aurora-fog/70 text-xs">{`© ${now.getFullYear()} ${displayName}`}</p>
+
+            {/*
+              FR-45's "report this site" affordance, supplied by the route (see
+              `reportSlot` on `TemplateRenderProps`). Deliberately the quietest
+              thing in the footer: it has to be findable by someone looking for
+              it and invisible to everyone else, because it sits on the
+              organizer's own site.
+
+              Absent on the homepage demo and in previews, which have no real
+              event to report — hence the null check rather than an assumption.
+            */}
+            {reportSlot ? <div className="mt-3">{reportSlot}</div> : null}
           </div>
         </div>
       </AuroraContainer>

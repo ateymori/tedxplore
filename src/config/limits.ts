@@ -57,6 +57,18 @@ export const PREVIEW_TOKEN_BYTES = 32; // 256-bit (BR business rules, tech-stack
 export const REPORT_RATE_LIMIT_MAX_PER_HOUR = 3; // per IP per site (BR-15)
 export const REPORT_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
+/**
+ * FR-46: a report's explanation (Phase 9).
+ *
+ * A floor, for the same reason a rejection reason has one: an admin has to act
+ * on this text against a site they have never seen, and "bad" is not something
+ * anyone can act on. It is lower than a rejection's, though — a reporter is a
+ * stranger doing us a favour, not a reviewer doing their job, and a wall of
+ * required typing is how you get no reports at all.
+ */
+export const REPORT_EXPLANATION_MIN_LENGTH = 10;
+export const REPORT_EXPLANATION_MAX_LENGTH = 2000;
+
 // --- Admin review (Phase 7) -------------------------------------------------
 
 /**

@@ -35,7 +35,7 @@ import { AuroraVenue } from "./sections/venue";
  * Section order and visibility are the only structural decisions made here.
  * Everything else belongs to the sections themselves.
  */
-export function AuroraRenderer({ content, mode, now }: TemplateRenderProps) {
+export function AuroraRenderer({ content, mode, now, reportSlot }: TemplateRenderProps) {
   // The one authority on which optional sections exist (BR-13). The nav is
   // built from the same call, so a link can never point at a section that
   // wasn't rendered.
@@ -87,7 +87,7 @@ export function AuroraRenderer({ content, mode, now }: TemplateRenderProps) {
 
       {/* Always rendered, for every event, unconditionally (FR-38). */}
       <AuroraPlatformAbout />
-      <AuroraFooter content={content} now={now} />
+      <AuroraFooter content={content} now={now} reportSlot={reportSlot} />
     </div>
   );
 }

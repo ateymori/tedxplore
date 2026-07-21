@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
+import { ReportDialog } from "@/components/reports/report-dialog";
 import { parseTedxSegment, siteCacheTag, tedxSitePath, tedxSiteSegment } from "@/config/site";
 import {
   OG_IMAGE_HEIGHT,
@@ -224,5 +225,18 @@ export default async function PublicSitePage({ params }: PageProps<"/[site]">) {
   // `now` is passed rather than read inside the template (Phase 4). On this
   // route it is the time of the render that produced the cached page — see
   // `getLiveSite`, which is where it has to be captured.
-  return <Renderer content={live.content} mode="public" now={live.renderedAt} />;
+  //
+  // `reportSlot` is FR-45's affordance (task 9.1). It is supplied here rather
+  // than built by the template because a report has to name the event, and
+  // `EventContent` deliberately carries no identifier — this route is the
+  // lowest layer that knows the slug. Only the public site passes one: the
+  // homepage demo and the two preview routes have no real event to report.
+  return (
+    <Renderer
+      content={live.content}
+      mode="public"
+      now={live.renderedAt}
+      reportSlot={<ReportDialog slug={slug} />}
+    />
+  );
 }

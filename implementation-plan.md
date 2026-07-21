@@ -138,7 +138,10 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 ## Phase 9 — Reporting & Abuse Protection
 
-- [ ] 9.1 (S) Report UI on public sites: discreet footer link → form (category, explanation, optional email) with honeypot.
+- [x] 9.1 (S) Report UI on public sites: discreet footer link → form (category, explanation, optional email) with honeypot.
+
+  **Outcome.** `lib/validation/report.ts` and `components/reports/report-dialog.tsx`, reached through a new **`reportSlot` on `TemplateRenderProps`**. That slot is the design decision: FR-45 wants the link in the template's own footer, but a report must name the event and `EventContent` deliberately carries no id or slug (C-1). Passing a React node — built by the route, positioned by the template — avoids both bad alternatives (a non-content field in `EventContent`, or handing the template something to query with). Same shape as 8.0's `editAction`. Only the public site supplies one; the homepage demo and both preview routes pass nothing and the footer renders without it. The schema is split into a transform-free `reportFormSchema` the browser binds to and a `reportSubmissionSchema` the server parses — partly a React Hook Form constraint, but mainly so the honeypot is **not** validated client-side, since telling a bot which field to leave alone turns the trap into a tutorial.
+
 - [ ] 9.2 (M) Report handler: validation, IP-hash rate limiting (DB fixed-window, 3/hour/site), Report persistence; expired rate-limit rows cleaned up (opportunistic on write + periodic Vercel cron sweep).
 - [ ] 9.3 (S) Admin report inbox: list, detail with site link, resolve/dismiss, jump to suspend.
 - [ ] 9.4 (S) Rate-limit adapter applied to preview-token guessing and auth-sensitive endpoints.
