@@ -8,6 +8,38 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    # `next build` prerenders the `[site]` route (and reads the sitemap/health
+    # route), so it needs a reachable database — without one, every prerender
+    # throws ECONNREFUSED and the build fails. Spin up a throwaway Postgres and
+    # apply migrations before building, mirroring how the build is verified
+    # locally. The DB is empty; the placeholder `[site]` param then resolves to
+    # `notFound()` (BR-4 reserves its slug) instead of a connection error.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tedxplore
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # A local, unpooled Postgres — the runtime client and migrations both
+      # point at the same service container in CI.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tedxplore
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/tedxplore
+      # `next build` executes module scope, which validates the server env
+      # (src/config/env.ts). A throwaway build-time value — the deployed output
+      # reads the real secret from the runtime environment.
+      BETTER_AUTH_SECRET: ci-build-placeholder-secret-not-used-at-runtime
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +55,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Apply database migrations
+        run: pnpm exec prisma migrate deploy
+
       - name: Lint
         run: pnpm lint
 
@@ -34,8 +69,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-        env:
-          # `next build` executes module scope, which validates the server env
-          # (src/config/env.ts). These are throwaway build-time values — the
-          # build output reads the real secrets from the runtime environment.
-          BETTER_AUTH_SECRET: ci-build-placeholder-secret-not-used-at-runtime
