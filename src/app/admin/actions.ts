@@ -2,9 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
-import { ADMIN_PATH, adminEventPath, reviewRequestPath } from "@/config/routes";
+import {
+  ADMIN_PATH,
+  ADMIN_REPORTS_PATH,
+  adminEventPath,
+  adminReportPath,
+  reviewRequestPath,
+} from "@/config/routes";
 import { getAdminUser } from "@/server/auth-guards";
 import { revalidateSite } from "@/server/revalidate";
+import * as reportAdminService from "@/server/services/report-admin-service";
 import * as reviewService from "@/server/services/review-service";
 import type { Result } from "@/server/services/result";
 
@@ -87,6 +94,30 @@ export async function restoreEventAction(
   if (result.ok) {
     revalidateSite(result.value.slug);
     revalidateAdminViews(result.value.eventId);
+  }
+
+  return result;
+}
+
+/**
+ * Closing a report (task 9.3).
+ *
+ * Unlike the four above, these do **not** call `revalidateSite`: closing a
+ * report changes nothing a visitor can see. Suspension is what does that, and
+ * it is deliberately a separate action reached from the event page — see
+ * `closeReport` in the service for why resolving does not imply suspending.
+ */
+export async function closeReportAction(
+  reportId: string,
+  status: "RESOLVED" | "DISMISSED",
+): Promise<Result<{ reportId: string }>> {
+  const auth = await getAdminUser();
+  if (!auth.ok) return auth;
+
+  const result = await reportAdminService.closeReport(auth.value, reportId, status);
+  if (result.ok) {
+    revalidatePath(ADMIN_REPORTS_PATH);
+    revalidatePath(adminReportPath(reportId));
   }
 
   return result;

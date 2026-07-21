@@ -4,9 +4,15 @@ import Link from "next/link";
 import { AdminNavLink } from "@/components/admin/admin-nav-link";
 import { SiteNavActions, SiteNavActionsSkeleton, SiteNavShell } from "@/components/site-nav";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ADMIN_EVENTS_PATH, DASHBOARD_PATH, REVIEW_QUEUE_PATH } from "@/config/routes";
+import {
+  ADMIN_EVENTS_PATH,
+  ADMIN_REPORTS_PATH,
+  DASHBOARD_PATH,
+  REVIEW_QUEUE_PATH,
+} from "@/config/routes";
 import { requireAdmin } from "@/server/auth-guards";
 import { countPendingReviews } from "@/server/services/admin-service";
+import { countOpenReports } from "@/server/services/report-admin-service";
 
 /**
  * The admin area sits outside the `(app)` group so it can carry its own chrome.
@@ -88,13 +94,19 @@ async function AdminSectionNav() {
 
   // The queue depth is the one number an admin wants before deciding where to
   // click. It degrades to no badge rather than taking the whole area down.
-  const pending = await countPendingReviews(admin);
+  // Both counts in one round trip: they are independent queries and the nav
+  // cannot paint until it has both anyway.
+  const [pending, open] = await Promise.all([countPendingReviews(admin), countOpenReports(admin)]);
   const pendingCount = pending.ok ? pending.value : 0;
+  const openReports = open.ok ? open.value : 0;
 
   return (
     <nav aria-label="Admin sections" className={SECTION_NAV_CLASS}>
       <AdminNavLink href={REVIEW_QUEUE_PATH} exact badge={pendingCount}>
         Review queue
+      </AdminNavLink>
+      <AdminNavLink href={ADMIN_REPORTS_PATH} badge={openReports}>
+        Reports
       </AdminNavLink>
       <AdminNavLink href={ADMIN_EVENTS_PATH}>Events</AdminNavLink>
     </nav>
@@ -112,6 +124,7 @@ function AdminSectionNavFallback() {
   return (
     <div className={SECTION_NAV_CLASS} aria-hidden="true">
       <Skeleton className="h-8 w-32 rounded-md" />
+      <Skeleton className="h-8 w-24 rounded-md" />
       <Skeleton className="h-8 w-20 rounded-md" />
     </div>
   );

@@ -114,6 +114,12 @@ export function reviewRequestPath(requestId: string): string {
 }
 
 /** The admin events index (task 7.6), searchable by slug or owner. */
+export const ADMIN_REPORTS_PATH = `${ADMIN_PATH}/reports`;
+
+export function adminReportPath(reportId: string): string {
+  return `${ADMIN_REPORTS_PATH}/${reportId}`;
+}
+
 export const ADMIN_EVENTS_PATH = `${ADMIN_PATH}/events`;
 
 /** Search term for the admin events index. */

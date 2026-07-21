@@ -1,4 +1,4 @@
-import type { ReportCategory } from "@/generated/prisma/enums";
+import type { ReportCategory, ReportStatus } from "@/generated/prisma/enums";
 
 import { prisma } from "./prisma";
 
@@ -36,4 +36,83 @@ export async function findLiveEventIdBySlug(slug: string): Promise<string | null
   });
 
   return event?.id ?? null;
+}
+
+/**
+ * The report inbox (FR-43, task 9.3).
+ *
+ * Open first and oldest-first within that, for the same reason the review
+ * queue is oldest-first: a report nobody has looked at is the whole point of
+ * the screen, and newest-first lets the oldest complaint starve forever.
+ *
+ * Includes the event so the list can name the site without an N+1, and
+ * deliberately not the explanation — a list of full paragraphs is unreadable,
+ * and the detail page is one click away.
+ */
+export async function listReports(options: { status?: ReportStatus } = {}) {
+  return prisma.report.findMany({
+    where: options.status === undefined ? {} : { status: options.status },
+    orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      category: true,
+      status: true,
+      createdAt: true,
+      reporterEmail: true,
+      event: { select: { id: true, slug: true, displayName: true, publicationStatus: true } },
+    },
+  });
+}
+
+/** The badge on the admin nav — how much unlooked-at work there is. */
+export function countOpenReports(): Promise<number> {
+  return prisma.report.count({ where: { status: "OPEN" } });
+}
+
+export async function findReportById(id: string) {
+  return prisma.report.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      category: true,
+      explanation: true,
+      reporterEmail: true,
+      status: true,
+      createdAt: true,
+      resolvedAt: true,
+      resolver: { select: { email: true, name: true } },
+      event: {
+        select: {
+          id: true,
+          slug: true,
+          displayName: true,
+          publicationStatus: true,
+          deletedAt: true,
+          owner: { select: { email: true, name: true } },
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Closes a report.
+ *
+ * Scoped to `status: "OPEN"` in the write itself, not just checked beforehand:
+ * two admins working the inbox at once must not have the second silently
+ * overwrite the first's decision and resolver. A zero-row result means someone
+ * got there first, which the service reports rather than swallowing — the same
+ * shape as `updateEventSlug`'s guarded write in Phase 3.
+ */
+export async function closeReport(
+  id: string,
+  status: "RESOLVED" | "DISMISSED",
+  resolverId: string,
+): Promise<boolean> {
+  const { count } = await prisma.report.updateMany({
+    where: { id, status: "OPEN" },
+    data: { status, resolvedAt: new Date(), resolverId },
+  });
+
+  return count === 1;
 }
