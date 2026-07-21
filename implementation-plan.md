@@ -76,12 +76,12 @@ Tasks are small and sequential within a phase; phases build on each other. Each 
 
 **Goal:** the CMS-like editing experience.
 
-- [ ] 5.1 (M) Editor shell: section navigation, per-section forms layout, autosave status indicator (`Saving…/Saved/Save failed/Unsaved changes`) + "Save now".
-- [ ] 5.2 (M) Autosave engine: debounced per-section Server Actions, optimistic status, failure retry, concurrent-session last-write-wins warning.
-- [ ] 5.3 (M) Basics sections: hero (**display name** — required on every save, per FR-15a; **theme** — optional, ≤100 chars, BR-5d; UI hints that leaving it blank shows a tasteful platform default rather than nothing, FR-38), about, event date/time + timezone, contact + social links, registration URL (all optional; missing values just leave the corresponding section/state empty, not an error).
+- [x] 5.1 (M) Editor shell: section navigation, per-section forms layout, autosave status indicator (`Saving…/Saved/Save failed/Unsaved changes`) + "Save now".
+- [x] 5.2 (M) Autosave engine: debounced per-section Server Actions, optimistic status, failure retry, concurrent-session last-write-wins warning.
+- [x] 5.3 (M) Basics sections: hero (**display name** — required on every save, per FR-15a; **theme** — optional, ≤100 chars, BR-5d; UI hints that leaving it blank shows a tasteful platform default rather than nothing, FR-38), about, event date/time + timezone, contact + social links, registration URL (all optional; missing values just leave the corresponding section/state empty, not an error).
 - [ ] 5.4 (M) Cloudinary signed upload flow + `MediaAsset` recording + reusable image-field component (upload, replace, remove, validation errors).
 - [ ] 5.5 (L) List editors — speakers, team, sponsors (with tier select), FAQs: add/edit/remove/reorder (drag handle), limits from central config, inline validation. Every list may stay empty indefinitely (no minimum count) — empty is a valid, common draft state (FR-15a), not an error.
-- [ ] 5.6 (S) Venue section editor (name, address, description, image).
+- [ ] 5.6 (S) Venue section editor (name, address, description, image). _Text fields done; the image field lands with 5.4._
 - [ ] 5.7 (S) Owner draft preview: render current draft through the template (`mode: "preview"`), linked from editor and dashboard.
 
 **Exit:** full content lifecycle: edit everything, autosave, preview the real site.
