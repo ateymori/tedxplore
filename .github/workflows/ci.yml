@@ -69,3 +69,64 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  # The Playwright smoke suite (task 10.1), in its own job so its browser
+  # download and dev-server boot don't slow the fast lint/type/test/build gate.
+  # Playwright's `webServer` starts `pnpm dev` itself (reuseExistingServer is
+  # off in CI). The app must run on the port `NEXT_PUBLIC_APP_URL` names —
+  # Better Auth signs cookies against that origin and rejects sign-in from any
+  # other.
+  e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tedxplore
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tedxplore
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/tedxplore
+      BETTER_AUTH_SECRET: ci-e2e-placeholder-secret-not-used-in-production
+      # The suite and the dev server both assume this origin (see above).
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply database migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
