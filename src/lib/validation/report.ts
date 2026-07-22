@@ -118,7 +118,7 @@ export type ReportFormValues = z.infer<typeof reportFormSchema>;
  * accepted by validation and discarded *silently* by `report-service.ts`, so
  * that every outcome a bot can observe looks like success.
  *
- * (Written the wrong way first; `scripts/verify-9-2.ts` caught the 400.)
+ * (Written the wrong way first; `scripts/archive/verify-9-2.ts` caught the 400.)
  */
 export const reportSubmissionSchema = reportFormSchema.extend({
   reporterEmail: z

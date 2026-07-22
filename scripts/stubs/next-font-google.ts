@@ -11,7 +11,7 @@
  * `empty.js`. tsx resolves both through CJS, so an ESM loader hook never fires
  * and tsconfig `paths` is the shim that actually works.
  *
- * Not to be confused with `src/test/next-font-mock.ts`, which does the same job
+ * Not to be confused with `src/testing/next-font-mock.ts`, which does the same job
  * for Vitest through a Vite alias.
  */
 type LoadedFont = { className: string; variable: string; style: Record<string, string> };

@@ -3,7 +3,7 @@ import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { findTemplate, listTemplates } from "@/templates/registry";
-import { demoContent } from "@/templates/types";
+import { demoContent } from "@/templates/contract";
 
 /**
  * A template's Live Preview (FR-50).

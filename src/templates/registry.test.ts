@@ -4,7 +4,7 @@ import { eventContentSchema } from "@/content/event-content";
 import { sectionVisibility } from "@/content/serializer";
 import { isValidDisplayName } from "@/lib/validation/display-name";
 import { DEFAULT_TEMPLATE_ID, findTemplate, listTemplates } from "@/templates/registry";
-import { demoContent } from "@/templates/types";
+import { demoContent } from "@/templates/contract";
 
 const NOW = new Date("2026-01-15T12:00:00.000Z");
 

@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { templatePreviewPath } from "@/config/routes";
 import { templateEditHref } from "@/lib/template-links";
 import { getCurrentUser } from "@/server/auth-guards";
-import type { TemplateDefinition } from "@/templates/types";
+import type { TemplateDefinition } from "@/templates/contract";
 
 /**
  * One template in the homepage gallery (FR-49, FR-50).

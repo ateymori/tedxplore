@@ -8,10 +8,11 @@ import {
   TEDX_DISCLAIMER,
 } from "@/config/platform-copy";
 import { draftToEventContent, type EventDraft } from "@/content/serializer";
-import { auroraNavItems, AURORA_SECTION_IDS } from "@/templates/aurora/sections";
-import { AuroraRenderer } from "@/templates/aurora/renderer";
 import { findTemplate } from "@/templates/registry";
-import { demoContent } from "@/templates/types";
+import { demoContent } from "@/templates/contract";
+
+import { AuroraRenderer } from "./renderer";
+import { auroraNavItems, AURORA_SECTION_IDS } from "./sections";
 
 /**
  * Task 4.7's fallback verification, and the reason it is its own file.
@@ -203,7 +204,7 @@ describe("with Cloudinary configured, uploaded imagery replaces the fallback", (
     vi.resetModules();
 
     const [{ AuroraRenderer: Renderer }, { draftToEventContent: serialize }] = await Promise.all([
-      import("@/templates/aurora/renderer"),
+      import("./renderer"),
       import("@/content/serializer"),
     ]);
 

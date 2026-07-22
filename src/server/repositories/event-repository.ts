@@ -1,7 +1,7 @@
 import type { EventDraft } from "@/content/serializer";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PublicationStatus } from "@/generated/prisma/enums";
-import type { TemplateDemoSeed } from "@/templates/types";
+import type { TemplateDemoSeed } from "@/templates/contract";
 
 import { prisma } from "./prisma";
 

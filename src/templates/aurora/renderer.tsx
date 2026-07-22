@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { sectionVisibility } from "@/content/serializer";
-import type { TemplateRenderProps } from "@/templates/types";
+import type { TemplateRenderProps } from "@/templates/contract";
 
 import { AuroraSiteNav } from "./components/site-nav";
 import { auroraFontClassName } from "./fonts";

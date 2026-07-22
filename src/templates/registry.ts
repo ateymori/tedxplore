@@ -1,7 +1,7 @@
 import { AURORA_DEMO_DISPLAY_NAME, auroraDemoSeed } from "@/templates/aurora/demo-content";
 import { AuroraPoster } from "@/templates/aurora/poster";
 import { AuroraRenderer } from "@/templates/aurora/renderer";
-import type { TemplateDefinition } from "@/templates/types";
+import type { TemplateDefinition } from "@/templates/contract";
 
 /**
  * The template registry.

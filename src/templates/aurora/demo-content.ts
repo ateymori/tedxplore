@@ -1,4 +1,4 @@
-import type { TemplateDemoSeed } from "@/templates/types";
+import type { TemplateDemoSeed } from "@/templates/contract";
 
 /**
  * Aurora's demo/placeholder content (A-6).
