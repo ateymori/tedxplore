@@ -16,9 +16,38 @@ import { listTemplates } from "@/templates/registry";
  * complete working event site through Live Preview, and leave — the account is
  * only required at the point they want to edit something (FR-51).
  */
+
+/** The one-line value proposition, shared by the tab title and the social cards. */
+const HOMEPAGE_HEADLINE = `${SITE_NAME} — premium TEDx event websites from your content`;
+
+/**
+ * Homepage SEO (task 10.5).
+ *
+ * `title.absolute` so this does not run through the root layout's
+ * `%s · Tedxplore` template — the homepage's own title already leads with the
+ * brand, and the template would append a second "Tedxplore". `canonical: "/"`
+ * and the Open Graph/Twitter block resolve against `metadataBase` (the root
+ * layout's `APP_URL`), so a crawled preview deployment still points search and
+ * social back at production. No image card: there is no honest single image for
+ * "a platform that renders many different event sites", and a `summary` card
+ * with a real description reads better than a stretched logo.
+ */
 export const metadata: Metadata = {
-  title: `${SITE_NAME} — ${SITE_DESCRIPTION}`,
+  title: { absolute: HOMEPAGE_HEADLINE },
   description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: HOMEPAGE_HEADLINE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: HOMEPAGE_HEADLINE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 /**
@@ -41,7 +70,7 @@ export default function Home() {
           Premium TEDx event websites, generated from your content
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Fill in your speakers, venue, sponsors, and schedule. {SITE_NAME} renders a designed,
+          Add your speakers, venue, sponsors, and event details. {SITE_NAME} renders a designed,
           animated, responsive site — no layout, no CSS, no templates to wrestle with.
         </p>
       </section>
