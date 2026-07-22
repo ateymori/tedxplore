@@ -3,6 +3,7 @@ import "server-only";
 import { REPORT_RATE_LIMIT_MAX_PER_HOUR, REPORT_RATE_LIMIT_WINDOW_MS } from "@/config/limits";
 import { REPORT_HONEYPOT_FIELD, type ReportSubmission } from "@/lib/validation/report";
 import { hashIp, rateLimiter, sweepExpiredRateLimits } from "@/server/adapters/rate-limit";
+import { logger } from "@/server/logger";
 import { createReport, findLiveEventIdBySlug } from "@/server/repositories/report-repository";
 
 /**
@@ -90,8 +91,12 @@ export async function submitReport(
   // closed windows must never fail or delay the report that triggered it, and
   // correctness never depended on it — `consume` treats an expired row as
   // absent regardless.
-  void sweepExpiredRateLimits().catch((error) => {
-    console.warn("[reports] Rate-limit sweep failed; rows will be reclaimed later.", error);
+  void sweepExpiredRateLimits().catch((error: unknown) => {
+    logger.warn("ratelimit.sweep.failed", {
+      scope: "reports",
+      note: "rows will be reclaimed later",
+      error: error instanceof Error ? error.message : String(error),
+    });
   });
 
   return { type: "ACCEPTED" };

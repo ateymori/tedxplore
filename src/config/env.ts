@@ -38,6 +38,13 @@ const serverEnvSchema = z
     // URLs and so must see it too.
     CLOUDINARY_API_KEY: z.string().min(1).optional(),
     CLOUDINARY_API_SECRET: z.string().min(1).optional(),
+
+    // Shared secret for the Vercel Cron sweep endpoint (task 10.4). Vercel
+    // sends it as `Authorization: Bearer <CRON_SECRET>` on scheduled
+    // invocations. Optional so dev and CI run without it; when unset the sweep
+    // route refuses every request in production (fail-closed) and allows local
+    // calls in development — see `app/api/cron/sweep/route.ts`.
+    CRON_SECRET: z.string().min(1).optional(),
   })
   .refine((env) => Boolean(env.GOOGLE_CLIENT_ID) === Boolean(env.GOOGLE_CLIENT_SECRET), {
     error:

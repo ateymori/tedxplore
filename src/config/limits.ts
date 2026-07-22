@@ -91,3 +91,14 @@ export const REPORT_EXPLANATION_MAX_LENGTH = 2000;
  */
 export const REJECTION_REASON_MIN_LENGTH = 20;
 export const REJECTION_REASON_MAX_LENGTH = 2000;
+
+// --- Operational (Phase 10) -------------------------------------------------
+
+/**
+ * How long an unreferenced media asset is left alone before the orphan sweep
+ * (task 10.4) may reclaim it. The grace window exists for one race: an asset is
+ * recorded a moment before the content field that points at it is set, so a
+ * sweep running in that gap must not mistake a brand-new upload for garbage.
+ * Snapshot-referenced assets are protected regardless of age.
+ */
+export const ORPHANED_MEDIA_GRACE_HOURS = 24;

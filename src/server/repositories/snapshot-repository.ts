@@ -38,6 +38,21 @@ export async function findSnapshotContent(id: string): Promise<EventContent | nu
   return upgradeSnapshotContent(snapshot.content);
 }
 
+/**
+ * Every retained snapshot's content, upgraded (task 10.4).
+ *
+ * The orphaned-media sweep uses this to build the set of image public ids no
+ * live-or-restorable site may lose. *All* snapshots, not just live ones:
+ * snapshots are retained for restoration (invariant 3), so an asset any of them
+ * references is not garbage. `upgradeSnapshotContent` throws on a document it
+ * cannot parse — the sweep treats that as a reason to stop rather than risk
+ * deleting an asset it could not account for.
+ */
+export async function listAllSnapshotContents(): Promise<EventContent[]> {
+  const snapshots = await prisma.snapshot.findMany({ select: { content: true } });
+  return snapshots.map((snapshot) => upgradeSnapshotContent(snapshot.content));
+}
+
 /** Everything the public route needs to render one live site — and nothing more. */
 export interface LiveSiteRow {
   templateId: string;

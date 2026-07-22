@@ -7,6 +7,7 @@ import { SiteRejected } from "@/emails/site-rejected";
 import { SiteSuspended } from "@/emails/site-suspended";
 import { SubmissionReceived } from "@/emails/submission-received";
 import { sendEmail } from "@/server/adapters/email";
+import { captureException } from "@/server/logger";
 
 /**
  * Publishing lifecycle notifications (FR-48).
@@ -36,15 +37,16 @@ interface Recipient {
 /**
  * Sends without letting a delivery failure reach the caller.
  *
- * `console.error` rather than silence: this is exactly the sort of failure that
- * looks like nothing at all until an organizer says they were never told their
- * site went live. Phase 10.4 hangs real error monitoring off these call sites.
+ * Reported through `captureException` rather than swallowed: this is exactly
+ * the sort of failure that looks like nothing at all until an organizer says
+ * they were never told their site went live, so it is one of the call sites
+ * the task-10.4 monitoring seam exists for.
  */
 async function notify(description: string, send: () => Promise<void>): Promise<void> {
   try {
     await send();
   } catch (error) {
-    console.error(`[publish-notifications] ${description} failed to send`, error);
+    captureException(error, { scope: "publish-notifications", description });
   }
 }
 

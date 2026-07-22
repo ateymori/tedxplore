@@ -47,6 +47,42 @@ export async function findMediaAssetByPublicId(publicId: string) {
   });
 }
 
+export interface OrphanCandidate {
+  id: string;
+  cloudinaryPublicId: string;
+  eventId: string;
+  createdAt: Date;
+}
+
+/**
+ * Assets with **no draft foreign key** pointing at them, older than `cutoff`
+ * (task 10.4).
+ *
+ * "No draft FK" is only half the orphan test — a snapshot can still reference
+ * the asset by public id in its frozen JSON, which no `where` clause here can
+ * see. The cleanup *service* subtracts those; this query narrows the field to
+ * candidates. The `createdAt` cutoff is the grace window that keeps a
+ * just-uploaded, not-yet-attached asset from being reaped mid-flow.
+ */
+export async function findOrphanCandidates(cutoff: Date): Promise<OrphanCandidate[]> {
+  return prisma.mediaAsset.findMany({
+    where: {
+      createdAt: { lt: cutoff },
+      heroFor: { none: {} },
+      venueFor: { none: {} },
+      speakers: { none: {} },
+      teamMembers: { none: {} },
+      sponsors: { none: {} },
+    },
+    select: { id: true, cloudinaryPublicId: true, eventId: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function deleteMediaAssetById(id: string): Promise<void> {
+  await prisma.mediaAsset.delete({ where: { id } });
+}
+
 /**
  * Points one content field at a media asset — or at nothing, when `mediaId` is
  * null (the "remove image" path).
