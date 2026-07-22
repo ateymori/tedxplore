@@ -240,6 +240,27 @@ Next.js App Router + TypeScript (strict) + Tailwind + shadcn/ui (app chrome only
 
 V1 template id: **`aurora`** (`src/templates/aurora/`), registered in `src/templates/registry.ts` with `demoContent` that seeds every new event and powers the homepage's Live Preview.
 
+## React Bits (component installs)
+
+[React Bits](https://reactbits.dev) components install through the shadcn CLI. Three registries are wired in `components.json`. Install them **anywhere** — app chrome or inside a template — with no folder convention:
+
+- **Free:** `pnpm dlx shadcn@latest add @react-bits/<Name>`
+- **Starter:** `pnpm dlx shadcn@latest add @reactbits-starter/<name>`
+- **Pro:** `pnpm dlx shadcn@latest add @reactbits-pro/<name>`
+
+(Use `pnpm dlx`, not the local shadcn — our zod-4 override breaks the local CLI. Free-registry component ids are PascalCase with a language/style variant suffix, e.g. `SplitText-TS-TW` for this TS+Tailwind repo, not `split-text`. `--path <dir>` still works if you want to choose the destination.)
+
+The two paid tiers (Starter, Pro) require **`REACTBITS_LICENSE_KEY`** — the CLI sends it as `Authorization: Bearer ${REACTBITS_LICENSE_KEY}`, resolved from `.env` at install time. The literal `${REACTBITS_LICENSE_KEY}` stays in `components.json`; **never paste the real key into any file**. It is build-tooling only — not read by the app at runtime, not needed in production. Free `@react-bits/*` components need no key. (To sanity-check auth reaches the server: a request with no key gets `401`, with a valid key a nonexistent name gets `404` — the move off 401 is the proof.)
+
+**Lint won't fight you.** React Bits code is vendored and written to its own style — it trips the strict React Compiler-era rules (`react-hooks/set-state-in-effect`, `purity`, `refs`, …) that Next 16 enables by default. Those rules are turned **off project-wide** in `eslint.config.mjs` (a deliberate trade — they had caught a few real bugs in our own code; see the Phase 3/5 notes), so a React Bits component lints clean wherever it lives. `react-hooks/rules-of-hooks` is kept on (a conditional hook call is a runtime crash, and React Bits never trips it).
+
+After installing any React Bits component:
+
+- **Check the export shape** — components ship as named *or* default exports (`SplitText` is default; `hero-24` was `export function Hero24`); import accordingly.
+- **Install its peer deps** — the CLI usually adds them, but confirm: React Bits animations commonly need `motion`, `gsap` + `@gsap/react`, `three` + `@react-three/fiber`, or `@paper-design/shaders-react`. Re-run typecheck after.
+
+**Using React Bits inside a template is allowed** (a deliberate change from Aurora's CSS-only approach — Aurora predates this and stays CSS-driven). Mind the tradeoff the templates were originally designed around: React Bits components are **client components** with JS animation, so a template section using one becomes a hydrated island rather than static HTML. That is fine for below-the-fold enhancement, but for **above-the-fold / LCP content (hero, headline)** a JS animation that renders a hidden pre-animation state will regress LCP and the no-JS baseline (exactly why Motion was removed from Aurora — see the Phase 4 notes). Prefer the CSS-driven pattern for the hero; reach for React Bits below the fold, and re-run Lighthouse (NFR-1, ≥90 target) after adding one to a template.
+
 ## Conventions
 
 - TypeScript strict; no `any` escapes; domain errors as discriminated unions, not thrown strings.
