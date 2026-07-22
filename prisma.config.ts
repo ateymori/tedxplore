@@ -12,6 +12,8 @@ export default defineConfig({
   datasource: {
     // Migrations need a direct (unpooled) connection; the app's runtime
     // PrismaClient uses the pooled DATABASE_URL via a driver adapter instead.
-    url: process.env["DIRECT_URL"],
+    // Locally and in CI this is DIRECT_URL; on Vercel the Neon integration
+    // injects the unpooled string as DATABASE_URL_UNPOOLED, so fall back to it.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL_UNPOOLED"],
   },
 });
