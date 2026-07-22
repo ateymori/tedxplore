@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { appFontClassName } from "@/app/fonts";
 import { HOME_PATH } from "@/config/routes";
 import { SITE_NAME } from "@/config/site";
 
@@ -8,7 +9,9 @@ import { SITE_NAME } from "@/config/site";
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12">
+    <div
+      className={`${appFontClassName} flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12`}
+    >
       <Link
         href={HOME_PATH}
         className="text-lg font-semibold tracking-tight transition-opacity hover:opacity-70"

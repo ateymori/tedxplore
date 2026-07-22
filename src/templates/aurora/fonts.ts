@@ -1,4 +1,4 @@
-import { Archivo, Inter } from "next/font/google";
+import { Archivo, Geist_Mono, Inter } from "next/font/google";
 
 /**
  * Aurora's typefaces.
@@ -41,4 +41,20 @@ const body = Inter({
   display: "swap",
 });
 
-export const auroraFontClassName = `${display.variable} ${body.variable}`;
+/**
+ * The countdown's digits, and the only monospaced type on the site.
+ *
+ * Aurora owns this rather than borrowing the app's Geist Mono through Tailwind's
+ * `font-mono` (task 10.3). Since Geist was moved out of the root layout to keep
+ * it off event sites, `--font-geist-mono` no longer exists here — so the
+ * template carries its own mono, scoped like the other two. It is the same
+ * underlying face `next/font` would otherwise dedupe, now preloaded on the event
+ * site because it is genuinely rendered here (unlike Geist Sans ever was).
+ */
+const mono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-aurora-mono",
+  display: "swap",
+});
+
+export const auroraFontClassName = `${display.variable} ${body.variable} ${mono.variable}`;

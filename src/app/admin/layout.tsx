@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 
+import { appFontClassName } from "@/app/fonts";
 import { AdminNavLink } from "@/components/admin/admin-nav-link";
 import { SiteNavActions, SiteNavActionsSkeleton, SiteNavShell } from "@/components/site-nav";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,7 +46,7 @@ import { countOpenReports } from "@/server/services/report-admin-service";
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
       <SiteNavShell>
         <Suspense fallback={<SiteNavActionsSkeleton />}>
           <AdminNav />

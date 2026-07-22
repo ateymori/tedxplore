@@ -62,7 +62,7 @@ export function AuroraCountdown({ startsAt }: { startsAt: string }) {
             key={key}
             className="border-aurora-line/70 bg-aurora-ink/60 min-w-16 rounded-xl border px-3 py-3 text-center backdrop-blur-sm sm:min-w-20 sm:px-4"
           >
-            <span className="text-aurora-snow block font-mono text-2xl leading-none font-semibold tabular-nums sm:text-3xl">
+            <span className="text-aurora-snow block font-[family-name:var(--font-aurora-mono)] text-2xl leading-none font-semibold tabular-nums sm:text-3xl">
               {parts === undefined ? "––" : String(parts[key]).padStart(2, "0")}
             </span>
             <span className="text-aurora-fog mt-2 block text-[0.65rem] font-medium tracking-[0.18em] uppercase">

@@ -29,3 +29,6 @@ function stub(family: string) {
  */
 export const Archivo = stub("archivo");
 export const Inter = stub("inter");
+// Aurora's countdown mono (`--font-aurora-mono`) and the app chrome's Geist.
+export const Geist = stub("geist");
+export const Geist_Mono = stub("geist-mono");

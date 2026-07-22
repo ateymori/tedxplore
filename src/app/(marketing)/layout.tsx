@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { appFontClassName } from "@/app/fonts";
 import { SiteNavActions, SiteNavActionsSkeleton, SiteNavShell } from "@/components/site-nav";
 import { getCurrentUser } from "@/server/auth-guards";
 
@@ -28,7 +29,7 @@ import { getCurrentUser } from "@/server/auth-guards";
  */
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
       <SiteNavShell>
         <Suspense fallback={<SiteNavActionsSkeleton />}>
           <MarketingNav />
