@@ -242,6 +242,8 @@ V1 template id: **`aurora`** (`src/templates/aurora/`), registered in `src/templ
 
 ## React Bits (component installs)
 
+> There is a detailed vendor skill at **`.claude/skills/react-bits-pro/SKILL.md`** (React Bits Pro's own install/usage guide — component vs. block naming, export/import gotchas, WebGL sizing, the full catalogue). It auto-loads when a task involves React Bits. Its top carries Tedxplore-specific overrides, but **this section is the source of truth** where the two differ.
+
 [React Bits](https://reactbits.dev) components install through the shadcn CLI. Three registries are wired in `components.json`. Install them **anywhere** — app chrome or inside a template — with no folder convention:
 
 - **Free:** `pnpm dlx shadcn@latest add @react-bits/<Name>`
