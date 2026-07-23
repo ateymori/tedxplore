@@ -29,6 +29,13 @@ function stub(family: string) {
  */
 export const Archivo = stub("archivo");
 export const Inter = stub("inter");
-// Aurora's countdown mono (`--font-aurora-mono`) and the app chrome's Geist.
-export const Geist = stub("geist");
+// Aurora's countdown mono (`--font-aurora-mono`).
 export const Geist_Mono = stub("geist-mono");
+
+/**
+ * `next/font/local` (the app chrome's self-hosted Inter, `app/fonts.ts`) is
+ * the same build-time transform under a different import specifier, so it
+ * gets its own alias in `vitest.config.ts` pointing back to this file. It's a
+ * default export, not named, hence the separate declaration.
+ */
+export default stub("inter-local");

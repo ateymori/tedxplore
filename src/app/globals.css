@@ -28,16 +28,16 @@ html.lenis.lenis-smooth {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /*
-    System fallbacks after the Geist vars, because those vars are now set by
-    the app-chrome group layouts rather than the root layout (task 10.3). On a
-    page rendered directly under the root layout with no group — the root-level
-    error/not-found pages, and the public [site] 404 — the Geist var is absent,
-    and without a fallback here `font-family: var(--font-sans)` would resolve to
-    nothing and land on the browser default serif. The fallback keeps those
-    pages on a clean sans/mono. Event-site pages never use these; Aurora sets
-    its own family.
+    System fallbacks after the app-chrome vars, because those vars are now set
+    by the app-chrome group layouts rather than the root layout (task 10.3). On
+    a page rendered directly under the root layout with no group — the
+    root-level error/not-found pages, and the public [site] 404 — the Inter var
+    is absent, and without a fallback here `font-family: var(--font-sans)`
+    would resolve to nothing and land on the browser default serif. The
+    fallback keeps those pages on a clean sans/mono. Event-site pages never use
+    these; Aurora sets its own family.
   */
-  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  --font-sans: var(--font-inter, ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   --font-heading: var(--font-sans);
   /* Tailwind v4's default `--container-*` scale tops out at 7xl (80rem); the
@@ -160,5 +160,15 @@ html.lenis.lenis-smooth {
   }
   html {
     @apply font-sans;
+    /*
+      cv11 is Inter's single-story lowercase `a` (rsms.me's character-variant
+      feature set — see the sourcing note in `app/fonts.ts`). Set here, next to
+      `font-sans` itself, on the same low-specificity `html` selector so it
+      inherits everywhere the app-chrome Inter var applies. It has no effect on
+      the public event templates: Aurora sets its own `font-family` at a higher
+      specificity (`.aurora`, task 4's scoping), and its own Inter build (via
+      `next/font/google`, task 5.4) doesn't carry this table anyway.
+    */
+    font-feature-settings: "cv11" 1;
   }
 }

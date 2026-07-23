@@ -5,8 +5,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // `next/font/google` only exists as a build-time transform; see the mock.
+      // `next/font/google` and `next/font/local` only exist as build-time
+      // transforms; see the mock.
       "next/font/google": path.resolve(__dirname, "./src/testing/next-font-mock.ts"),
+      "next/font/local": path.resolve(__dirname, "./src/testing/next-font-mock.ts"),
     },
   },
   test: {
