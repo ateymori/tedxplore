@@ -59,7 +59,7 @@ export default async function EventEditorPage({
   const publishStatus = await getPublishStatus(user, eventId);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-8xl flex-col gap-8">
       <div className="flex flex-col gap-2">
         <Link
           href={DASHBOARD_PATH}

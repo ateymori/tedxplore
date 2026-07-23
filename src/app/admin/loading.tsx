@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Streaming boundary for the admin area — same reasoning as the `(app)` group's
  * (task 8.0): role-gated, per-session, nothing here is cacheable.
  *
- * Wider than the `(app)` skeleton because the admin shell is a `max-w-6xl`
+ * Wider than the `(app)` skeleton because the admin shell is a `max-w-8xl`
  * table-shaped surface (queue, events index) rather than a card list.
  */
 export default function AdminLoading() {

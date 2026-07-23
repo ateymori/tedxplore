@@ -1,7 +1,13 @@
 import { Suspense } from "react";
 
 import { appFontClassName } from "@/app/fonts";
-import { SiteNavActions, SiteNavActionsSkeleton, SiteNavShell } from "@/components/site-nav";
+import {
+  SiteNavLinks,
+  SiteNavLinksSkeleton,
+  SiteNavShell,
+  SiteNavUser,
+  SiteNavUserSkeleton,
+} from "@/components/site-nav";
 import { getCurrentUser } from "@/server/auth-guards";
 
 /**
@@ -17,9 +23,10 @@ import { getCurrentUser } from "@/server/auth-guards";
  * Reading the session at the top of this layout used to make the whole
  * marketing surface dynamic, which 4.9 noted and accepted. Under Cache
  * Components that is no longer the trade on offer: the session read is now
- * isolated to the streamed `MarketingNav`, so everything else — the wordmark,
+ * isolated to the streamed nav slots, so everything else — the wordmark,
  * the headline, the template grid — prerenders as a static shell and is served
- * from the first byte, with the nav's right-hand side arriving a beat later.
+ * from the first byte, with the nav's session-dependent parts arriving a beat
+ * later.
  *
  * This is precisely the "static page with a session-aware island" shape the
  * previous note said to move to should this surface ever need CDN caching.
@@ -30,18 +37,30 @@ import { getCurrentUser } from "@/server/auth-guards";
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
-      <SiteNavShell>
-        <Suspense fallback={<SiteNavActionsSkeleton />}>
-          <MarketingNav />
-        </Suspense>
-      </SiteNavShell>
+      <SiteNavShell
+        navLinks={
+          <Suspense fallback={<SiteNavLinksSkeleton />}>
+            <MarketingNavLinks />
+          </Suspense>
+        }
+        userActions={
+          <Suspense fallback={<SiteNavUserSkeleton />}>
+            <MarketingNavUser />
+          </Suspense>
+        }
+      />
 
       {children}
     </div>
   );
 }
 
-async function MarketingNav() {
+async function MarketingNavLinks() {
   const user = await getCurrentUser();
-  return <SiteNavActions user={user} />;
+  return <SiteNavLinks user={user} />;
+}
+
+async function MarketingNavUser() {
+  const user = await getCurrentUser();
+  return <SiteNavUser user={user} />;
 }

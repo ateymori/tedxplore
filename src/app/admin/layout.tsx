@@ -3,7 +3,13 @@ import Link from "next/link";
 
 import { appFontClassName } from "@/app/fonts";
 import { AdminNavLink } from "@/components/admin/admin-nav-link";
-import { SiteNavActions, SiteNavActionsSkeleton, SiteNavShell } from "@/components/site-nav";
+import {
+  SiteNavLinks,
+  SiteNavLinksSkeleton,
+  SiteNavShell,
+  SiteNavUser,
+  SiteNavUserSkeleton,
+} from "@/components/site-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ADMIN_EVENTS_PATH,
@@ -47,11 +53,18 @@ import { countOpenReports } from "@/server/services/report-admin-service";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
-      <SiteNavShell>
-        <Suspense fallback={<SiteNavActionsSkeleton />}>
-          <AdminNav />
-        </Suspense>
-      </SiteNavShell>
+      <SiteNavShell
+        navLinks={
+          <Suspense fallback={<SiteNavLinksSkeleton />}>
+            <AdminNavLinks />
+          </Suspense>
+        }
+        userActions={
+          <Suspense fallback={<SiteNavUserSkeleton />}>
+            <AdminNavUser />
+          </Suspense>
+        }
+      />
 
       <div className="border-b bg-muted/30">
         {/*
@@ -70,10 +83,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Suspense>
       </div>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">{children}</main>
+      <main className="mx-auto w-full max-w-8xl flex-1 px-6 py-10">{children}</main>
 
       <footer className="border-t px-6 py-4">
-        <div className="mx-auto w-full max-w-6xl">
+        <div className="mx-auto w-full max-w-8xl">
           <Suspense fallback={<Skeleton className="h-4 w-72" />}>
             <AdminFooter />
           </Suspense>
@@ -83,12 +96,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 }
 
-async function AdminNav() {
+async function AdminNavLinks() {
   const admin = await requireAdmin();
-  return <SiteNavActions user={admin} />;
+  return <SiteNavLinks user={admin} />;
 }
 
-const SECTION_NAV_CLASS = "mx-auto flex w-full max-w-6xl items-center gap-1 px-6 py-2";
+async function AdminNavUser() {
+  const admin = await requireAdmin();
+  return <SiteNavUser user={admin} />;
+}
+
+const SECTION_NAV_CLASS = "mx-auto flex w-full max-w-8xl items-center gap-1 px-6 py-2";
 
 async function AdminSectionNav() {
   const admin = await requireAdmin();

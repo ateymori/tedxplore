@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { HOME_PATH } from "@/config/routes";
 import { signOut } from "@/lib/auth-client";
 
@@ -55,7 +57,14 @@ export function SignOutButton() {
           Sign out failed
         </span>
       ) : null}
-      <Button variant="ghost" size="sm" onClick={handleClick} disabled={pending}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleClick}
+        disabled={pending}
+        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+      >
+        {pending ? <Spinner /> : <LogOut />}
         {pending ? "Signing out…" : failed ? "Try again" : "Sign out"}
       </Button>
     </div>

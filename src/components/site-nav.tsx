@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SignOutButton } from "@/components/auth/sign-out-button";
-import { ADMIN_PATH, DASHBOARD_PATH, HOME_PATH, LOGIN_PATH } from "@/config/routes";
+import { FloatingNavBar } from "@/components/floating-nav-bar";
+import { SiteNavLinks, SiteNavUser } from "@/components/site-nav-actions";
+import { HOME_PATH } from "@/config/routes";
 import { SITE_NAME } from "@/config/site";
 import type { SessionUser } from "@/server/auth";
+
+export { SiteNavLinks, SiteNavUser };
 
 /**
  * The application's top navigation.
@@ -22,93 +24,89 @@ import type { SessionUser } from "@/server/auth";
  *
  * Cache Components draws a hard line between what can be prerendered and what
  * has to wait for the request, and the nav sits on both sides of it: the bar,
- * its border, and the wordmark are the same for every visitor, while the right
- * side is a function of the session. Kept as one component, the *whole* header
- * is session-dependent and no layout can paint anything until the session
+ * its border, and the wordmark are the same for every visitor, while the rest
+ * is a function of the session. Kept as one component, the *whole* header is
+ * session-dependent and no layout can paint anything until the session
  * resolves.
  *
- * So the layouts render `SiteNavShell` — static, prerendered, in the first byte
- * — and stream `SiteNavActions` into it behind a `<Suspense>`. `SiteNav` below
- * remains the composed form for any caller that already holds a user and does
- * not need to stream.
+ * So the layouts render `SiteNavShell` — static, prerendered, in the first
+ * byte — and stream `SiteNavLinks`/`SiteNavUser` into it behind their own
+ * `<Suspense>` boundaries. `SiteNav` below remains the composed form for any
+ * caller that already holds a user and does not need to stream.
+ *
+ * `SiteNavLinks`/`SiteNavUser` live in `site-nav-actions.tsx` as client
+ * components (re-exported here so existing imports keep working) — they need
+ * `usePathname()` to highlight the current section, which the
+ * session-passed-as-a-prop design above doesn't otherwise require. Each
+ * layout calls its session guard twice (once per slot) rather than once and
+ * splitting the result — `getCurrentUser`/`requireUser`/`requireAdmin` are
+ * all wrapped in React `cache()`, so the second call is free, not a second
+ * query.
+ *
+ * The floating glass-pill chrome itself lives in `FloatingNavBar` (adapted
+ * from React Bits Pro's `navigation-9` block): it owns the scroll/motion
+ * mechanics and knows nothing about routes or auth, so passing Server
+ * Components through as its `navItems`/`actions` slots still lets each
+ * subtree suspend and stream independently — `FloatingNavBar` being a client
+ * component doesn't pull the session read forward.
  */
-export function SiteNavShell({ children }: { children: React.ReactNode }) {
+export function SiteNavShell({
+  navLinks,
+  userActions,
+}: {
+  navLinks: React.ReactNode;
+  userActions: React.ReactNode;
+}) {
   return (
-    <header className="border-b">
-      <nav className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
+    <FloatingNavBar
+      brand={
         <Link
           href={HOME_PATH}
           className="text-lg font-semibold tracking-tight transition-opacity hover:opacity-70"
         >
           {SITE_NAME}
         </Link>
-
-        {children}
-      </nav>
-    </header>
+      }
+      navItems={navLinks}
+      actions={userActions}
+    />
   );
 }
 
 /**
- * The fallback for the streamed half.
- *
- * Sized to the signed-in layout rather than the signed-out one: a returning
- * visitor with a session is the common case on every route that streams this,
- * and matching the taller arrangement keeps the swap from nudging the page.
+ * The fallback for the streamed center nav-links slot.
  */
-export function SiteNavActionsSkeleton() {
+export function SiteNavLinksSkeleton() {
   return (
-    <div className="flex items-center gap-3" aria-hidden="true">
-      <Skeleton className="h-4 w-16" />
-      <Skeleton className="h-4 w-24" />
-      <Skeleton className="h-8 w-20 rounded-md" />
+    <div className="flex items-center gap-2" aria-hidden="true">
+      <Skeleton className="h-4 w-14" />
+      <Skeleton className="h-4 w-20" />
     </div>
   );
 }
 
-export function SiteNavActions({ user }: { user: SessionUser | null }) {
+/**
+ * The fallback for the streamed right-hand identity slot.
+ *
+ * Sized to the signed-in layout rather than the signed-out one: a returning
+ * visitor with a session is the common case on every route that streams this,
+ * and matching the wider arrangement keeps the swap from nudging the page.
+ */
+export function SiteNavUserSkeleton() {
   return (
-    <>
-      {user ? (
-        <div className="flex items-center gap-3">
-          {user.role === "ADMIN" ? (
-            <Link
-              href={ADMIN_PATH}
-              className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Admin
-            </Link>
-          ) : null}
-          <Link
-            href={DASHBOARD_PATH}
-            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            Dashboard
-          </Link>
-          {/* Falls back to the email for Google accounts that supplied no name. */}
-          <span className="max-w-[16ch] truncate text-sm font-medium">
-            {user.name || user.email}
-          </span>
-          <SignOutButton />
-        </div>
-      ) : (
-        // Base UI composes via `render`, not shadcn/Radix's `asChild`.
-        // `nativeButton={false}` tells it this renders an <a>, not a
-        // <button> — without it Base UI applies native button semantics to
-        // an anchor, which it warns about at runtime.
-        <Button size="sm" nativeButton={false} render={<Link href={LOGIN_PATH} />}>
-          Log In / Sign Up
-        </Button>
-      )}
-    </>
+    <div className="flex items-center gap-2" aria-hidden="true">
+      <Skeleton className="h-8 w-28 rounded-full" />
+      <Skeleton className="h-7 w-20 rounded-md" />
+    </div>
   );
 }
 
 /** The composed nav, for callers that already hold a user and need no streaming. */
 export function SiteNav({ user }: { user: SessionUser | null }) {
   return (
-    <SiteNavShell>
-      <SiteNavActions user={user} />
-    </SiteNavShell>
+    <SiteNavShell
+      navLinks={<SiteNavLinks user={user} />}
+      userActions={<SiteNavUser user={user} />}
+    />
   );
 }

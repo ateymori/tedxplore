@@ -65,7 +65,7 @@ export default function Home() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <section className="mx-auto w-full max-w-5xl px-6 pt-20 pb-16 sm:pt-28">
+      <section className="mx-auto w-full max-w-8xl px-6 pt-20 pb-16 sm:pt-28">
         <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
           Premium TEDx event websites, generated from your content
         </h1>
@@ -75,7 +75,7 @@ export default function Home() {
         </p>
       </section>
 
-      <section aria-labelledby="templates-heading" className="mx-auto w-full max-w-5xl px-6 pb-24">
+      <section aria-labelledby="templates-heading" className="mx-auto w-full max-w-8xl px-6 pb-24">
         <h2 id="templates-heading" className="text-2xl font-semibold tracking-tight">
           Choose a template
         </h2>
