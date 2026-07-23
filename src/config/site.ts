@@ -1,7 +1,7 @@
 // App-wide identity and URL constants. Never hardcode these at call sites —
 // e.g. metadata, emails, and public-site URL construction all read from here.
 
-export const SITE_NAME = "Tedxplore";
+export const SITE_NAME = "tedxplore";
 export const SITE_DOMAIN = "tedxplore.com";
 
 export const SITE_DESCRIPTION =

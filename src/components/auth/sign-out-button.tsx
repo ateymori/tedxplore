@@ -71,7 +71,7 @@ export function SignOutButton() {
         onClick={handleClick}
         disabled={pending}
         className={cn(
-          "group/signout cursor-pointer rounded-full border-border/60 bg-background/60 text-muted-foreground shadow-sm transition-all duration-150 ease-out",
+          "group/signout h-9 cursor-pointer rounded-sm border-border/60 bg-background/60 text-muted-foreground shadow-sm transition-all duration-150 ease-out",
           "hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive hover:shadow-lg hover:shadow-destructive/15",
           failed && "border-destructive/30 text-destructive",
         )}

@@ -25,7 +25,7 @@ function isActiveLink(pathname: string, href: string): boolean {
 /** The one place the active/inactive nav-link styles live. */
 function linkClassName(active: boolean): string {
   return cn(
-    "rounded-full px-3 py-1.5 text-sm transition-colors",
+    "rounded-sm px-3.5 py-2 text-sm transition-colors",
     active
       ? "bg-primary font-medium text-primary-foreground"
       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -139,7 +139,12 @@ export function SiteNavUser({ user }: { user: SessionUser | null }) {
   // <button> — without it Base UI applies native button semantics to
   // an anchor, which it warns about at runtime.
   return (
-    <Button size="sm" nativeButton={false} render={<Link href={LOGIN_PATH} />}>
+    <Button
+      size="sm"
+      nativeButton={false}
+      render={<Link href={LOGIN_PATH} />}
+      className="h-9 rounded-xl"
+    >
       Log In / Sign Up
     </Button>
   );

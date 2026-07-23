@@ -66,8 +66,8 @@ export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <section className="mx-auto w-full max-w-8xl px-6 pt-20 pb-16 sm:pt-28">
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          Premium TEDx event websites, generated from your content
+        <h1 className="max-w-6xl text-4xl font-bold leading-[1.15] tracking-tight text-balance sm:text-5xl">
+          Premium TEDx event websites. Generated from your own content!
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
           Add your speakers, venue, sponsors, and event details. {SITE_NAME} renders a designed,

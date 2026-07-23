@@ -62,7 +62,7 @@ export function SiteNavShell({
       brand={
         <Link
           href={HOME_PATH}
-          className="text-lg font-semibold tracking-tight transition-opacity hover:opacity-70"
+          className="font-brand text-5xl text-[#EB0028] tracking-tight transition-opacity hover:opacity-70 dark:text-white"
         >
           {SITE_NAME}
         </Link>
@@ -96,7 +96,7 @@ export function SiteNavUserSkeleton() {
   return (
     <div className="flex items-center gap-2" aria-hidden="true">
       <Skeleton className="h-8 w-28 rounded-full" />
-      <Skeleton className="h-7 w-20 rounded-md" />
+      <Skeleton className="h-9 w-20 rounded-xl" />
     </div>
   );
 }

@@ -51,11 +51,10 @@ export function FloatingNavBar({
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`relative flex items-center py-1.5 pr-1.5 pl-4 transition-[background-color,backdrop-filter,border-color,box-shadow,border-radius] duration-300 ease-out ${
-            scrolled
-              ? "rounded-2xl border bg-background/70 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.08)] backdrop-blur-xl"
-              : "rounded-none border border-transparent bg-transparent"
-          }`}
+          className={`relative flex items-center py-3 pr-5 pl-5 transition-[background-color,backdrop-filter,border-color,box-shadow,border-radius] duration-300 ease-out ${scrolled
+            ? "rounded-full border bg-background/70 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.08)] backdrop-blur-xl"
+            : "rounded-none border border-transparent bg-transparent"
+            }`}
         >
           <nav aria-label="Primary" className="grid w-full grid-cols-3 items-center gap-4">
             <div className="flex items-center justify-self-start">{brand}</div>

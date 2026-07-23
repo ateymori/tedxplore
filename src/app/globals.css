@@ -40,6 +40,9 @@ html.lenis.lenis-smooth {
   --font-sans: var(--font-inter, ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   --font-heading: var(--font-sans);
+  /* The "Tedxplore" nav wordmark only (`SiteNavShell`'s brand slot) — not part
+     of the app-chrome type scale, so kept out of --font-heading. */
+  --font-brand: var(--font-berkshire-swash, serif);
   /* Tailwind v4's default `--container-*` scale tops out at 7xl (80rem); the
      app-chrome layout width (nav bar + page content) uses 8xl, so it needs
      defining here. */

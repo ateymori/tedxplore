@@ -69,4 +69,18 @@ const sans = localFont({
 });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
-export const appFontClassName = `${sans.variable} ${mono.variable} font-sans`;
+/**
+ * Display face for the "Tedxplore" wordmark in the nav brand slot only —
+ * self-hosted (Google's pipeline would work fine here too, but kept
+ * consistent with the Inter setup above: exact bytes under `./fonts/`,
+ * `next/font/local` for the preload/`font-display` machinery).
+ */
+const brand = localFont({
+  src: "./fonts/berkshire-swash/BerkshireSwash-Regular.woff2",
+  variable: "--font-berkshire-swash",
+  display: "swap",
+  weight: "400",
+  style: "normal",
+});
+
+export const appFontClassName = `${sans.variable} ${mono.variable} ${brand.variable} font-sans`;
