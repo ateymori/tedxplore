@@ -8,6 +8,20 @@
    import has to be here rather than in the template's own components. */
 @import "../templates/aurora/aurora.css";
 
+/* Lenis smooth scroll (`components/smooth-scroll.tsx`) drives scrolling itself,
+   so native smooth scroll must stand down wherever Lenis is active — otherwise a
+   template's own `scroll-behavior: smooth` (Aurora's `html:has(.aurora)` rule,
+   and any future template's) double-animates every programmatic scroll against
+   Lenis's own animation. Lenis flags the active state with the `.lenis-smooth`
+   class it adds to <html> in JS; when it is absent (reduced-motion users, or a
+   route with no Lenis) the template keeps its native smooth scroll. We do not
+   import Lenis's own stylesheet (its `height: auto` rule breaks our `min-h-full`
+   sticky layout — see the note in `smooth-scroll.tsx`), so this one rule we do
+   want lives here instead. */
+html.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

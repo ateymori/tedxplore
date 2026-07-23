@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SmoothScroll } from "@/components/smooth-scroll";
 import { SITE_NAME, SITE_DESCRIPTION, APP_URL } from "@/config/site";
 import "./globals.css";
 
@@ -26,7 +27,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/*
+        Lenis smooth scrolling for the whole app — chrome, marketing, auth,
+        admin, the public event templates, and every preview. Mounted once here
+        because the root layout is inherited by every route (including `[site]`
+        and `/preview/*`), so a single instance drives them all with no risk of
+        a second Lenis fighting the first. `SmoothScroll` is a client island; it
+        renders `{children}` (server components) straight through and manages the
+        instance imperatively, so nothing below is forced to the client. It
+        no-ops under `prefers-reduced-motion` and pauses when an overlay locks
+        the page. See the globals.css note on the `scroll-behavior` override that
+        keeps templates' native smooth scroll from fighting Lenis.
+      */}
+      <body className="min-h-full flex flex-col">
+        <SmoothScroll>{children}</SmoothScroll>
+      </body>
     </html>
   );
 }
