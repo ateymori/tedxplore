@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, type RefObject } from "react";
 import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 
@@ -17,26 +17,29 @@ import Lenis from "lenis";
 // adds itself in JS.
 
 /**
- * Buttery smooth scrolling for the app chrome (dashboard, admin, marketing,
- * auth) via Lenis.
+ * Buttery smooth scrolling for the whole app via Lenis.
  *
- * Deliberately mounted only in the four group layouts, **never the root
- * layout** — the root layout is also inherited by the public `[site]` event
- * sites (Aurora), which ship no scroll-driving JS on purpose (Motion was
- * removed in Phase 4 for the LCP budget, NFR-1) and own their own
- * `scroll-behavior: smooth` + CSS scroll-driven reveals in `aurora.css`. Lenis
- * has no business on that critical path.
+ * Mounted **once in the root layout**, so a single Lenis instance drives every
+ * route the root layout is inherited by — app chrome, marketing, auth, admin,
+ * the public `[site]` templates, the Live Preview, and both `/preview/*` routes.
+ * One instance on purpose: the admin review screen renders a template *inside*
+ * the already-scrolled admin chrome, so a second Lenis would fight the first.
  *
  * Lenis drives the *real* window scroll (it does not transform a virtual
  * container), so nothing structural changes here — the component just renders
  * its children and manages the instance imperatively.
+ *
+ * ## Why the route-change scroll reset is a Suspense-wrapped child
+ *
+ * The reset needs `usePathname()`, which under Cache Components is runtime data.
+ * Read here — in a client component that wraps the entire app above every
+ * `<Suspense>` boundary — it makes every route a blocking prerender
+ * (`blocking-route`, which failed the build). Isolating it in `RouteScrollReset`
+ * behind its own boundary keeps this wrapper runtime-data-free so `{children}`
+ * prerenders, exactly as the admin section nav does with `AdminNavLink`.
  */
 export function SmoothScroll({ children }: { children: React.ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
-  const pathname = usePathname();
-  // Route changes reset scroll — but never on the very first render, which is a
-  // fresh load already at the top.
-  const isFirstRender = useRef(true);
 
   useEffect(() => {
     // Reduced-motion users get native scrolling, untouched. There is nothing to
@@ -126,6 +129,25 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  return (
+    <>
+      <Suspense fallback={null}>
+        <RouteScrollReset lenisRef={lenisRef} />
+      </Suspense>
+      {children}
+    </>
+  );
+}
+
+/**
+ * Resets scroll to the top on every route change (never on the first render,
+ * which is a fresh load already at the top). Renders nothing; it exists only to
+ * confine the `usePathname()` runtime read to its own `<Suspense>` boundary.
+ */
+function RouteScrollReset({ lenisRef }: { lenisRef: RefObject<Lenis | null> }) {
+  const pathname = usePathname();
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -140,7 +162,7 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
     // would snap the new page back to the previous page's offset.
     window.scrollTo(0, 0);
     lenis.scrollTo(0, { immediate: true });
-  }, [pathname]);
+  }, [pathname, lenisRef]);
 
-  return <>{children}</>;
+  return null;
 }
