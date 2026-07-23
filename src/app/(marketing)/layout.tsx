@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { appFontClassName } from "@/app/fonts";
+import { Providers } from "@/components/providers";
 import {
   SiteNavLinks,
   SiteNavLinksSkeleton,
@@ -8,6 +9,7 @@ import {
   SiteNavUser,
   SiteNavUserSkeleton,
 } from "@/components/site-nav";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { getCurrentUser } from "@/server/auth-guards";
 
 /**
@@ -36,22 +38,25 @@ import { getCurrentUser } from "@/server/auth-guards";
  */
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
-      <SiteNavShell
-        navLinks={
-          <Suspense fallback={<SiteNavLinksSkeleton />}>
-            <MarketingNavLinks />
-          </Suspense>
-        }
-        userActions={
-          <Suspense fallback={<SiteNavUserSkeleton />}>
-            <MarketingNavUser />
-          </Suspense>
-        }
-      />
+    <Providers>
+      <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
+        <SiteNavShell
+          navLinks={
+            <Suspense fallback={<SiteNavLinksSkeleton />}>
+              <MarketingNavLinks />
+            </Suspense>
+          }
+          userActions={
+            <Suspense fallback={<SiteNavUserSkeleton />}>
+              <MarketingNavUser />
+            </Suspense>
+          }
+        />
 
-      {children}
-    </div>
+        {children}
+      </div>
+      <ThemeSwitch />
+    </Providers>
   );
 }
 

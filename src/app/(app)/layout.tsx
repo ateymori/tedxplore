@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { appFontClassName } from "@/app/fonts";
+import { Providers } from "@/components/providers";
 import {
   SiteNavLinks,
   SiteNavLinksSkeleton,
@@ -8,6 +9,7 @@ import {
   SiteNavUser,
   SiteNavUserSkeleton,
 } from "@/components/site-nav";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { requireUser } from "@/server/auth-guards";
 
 /**
@@ -33,22 +35,25 @@ import { requireUser } from "@/server/auth-guards";
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
-      <SiteNavShell
-        navLinks={
-          <Suspense fallback={<SiteNavLinksSkeleton />}>
-            <AppNavLinks />
-          </Suspense>
-        }
-        userActions={
-          <Suspense fallback={<SiteNavUserSkeleton />}>
-            <AppNavUser />
-          </Suspense>
-        }
-      />
+    <Providers>
+      <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
+        <SiteNavShell
+          navLinks={
+            <Suspense fallback={<SiteNavLinksSkeleton />}>
+              <AppNavLinks />
+            </Suspense>
+          }
+          userActions={
+            <Suspense fallback={<SiteNavUserSkeleton />}>
+              <AppNavUser />
+            </Suspense>
+          }
+        />
 
-      <main className="mx-auto w-full max-w-8xl flex-1 px-6 py-10">{children}</main>
-    </div>
+        <main className="mx-auto w-full max-w-8xl flex-1 px-6 py-10">{children}</main>
+      </div>
+      <ThemeSwitch />
+    </Providers>
   );
 }
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { appFontClassName } from "@/app/fonts";
 import { AdminNavLink } from "@/components/admin/admin-nav-link";
+import { Providers } from "@/components/providers";
 import {
   SiteNavLinks,
   SiteNavLinksSkeleton,
@@ -10,6 +11,7 @@ import {
   SiteNavUser,
   SiteNavUserSkeleton,
 } from "@/components/site-nav";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ADMIN_EVENTS_PATH,
@@ -52,47 +54,50 @@ import { countOpenReports } from "@/server/services/report-admin-service";
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
-      <SiteNavShell
-        navLinks={
-          <Suspense fallback={<SiteNavLinksSkeleton />}>
-            <AdminNavLinks />
-          </Suspense>
-        }
-        userActions={
-          <Suspense fallback={<SiteNavUserSkeleton />}>
-            <AdminNavUser />
-          </Suspense>
-        }
-      />
+    <Providers>
+      <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
+        <SiteNavShell
+          navLinks={
+            <Suspense fallback={<SiteNavLinksSkeleton />}>
+              <AdminNavLinks />
+            </Suspense>
+          }
+          userActions={
+            <Suspense fallback={<SiteNavUserSkeleton />}>
+              <AdminNavUser />
+            </Suspense>
+          }
+        />
 
-      <div className="border-b bg-muted/30">
-        {/*
-          The whole section nav streams, not just the queue badge.
+        <div className="border-b bg-muted/30">
+          {/*
+            The whole section nav streams, not just the queue badge.
 
-          `AdminNavLink` marks the current tab with `usePathname()`, and on the
-          two dynamic admin routes (`/admin/review/[requestId]`,
-          `/admin/events/[eventId]`) the pathname is not known until the request
-          — so the links are runtime data even before the pending count is. One
-          boundary around the whole row is therefore both necessary and the
-          smaller change; a nested boundary for the badge alone would not have
-          covered the links.
-        */}
-        <Suspense fallback={<AdminSectionNavFallback />}>
-          <AdminSectionNav />
-        </Suspense>
-      </div>
-
-      <main className="mx-auto w-full max-w-8xl flex-1 px-6 py-10">{children}</main>
-
-      <footer className="border-t px-6 py-4">
-        <div className="mx-auto w-full max-w-8xl">
-          <Suspense fallback={<Skeleton className="h-4 w-72" />}>
-            <AdminFooter />
+            `AdminNavLink` marks the current tab with `usePathname()`, and on the
+            two dynamic admin routes (`/admin/review/[requestId]`,
+            `/admin/events/[eventId]`) the pathname is not known until the request
+            — so the links are runtime data even before the pending count is. One
+            boundary around the whole row is therefore both necessary and the
+            smaller change; a nested boundary for the badge alone would not have
+            covered the links.
+          */}
+          <Suspense fallback={<AdminSectionNavFallback />}>
+            <AdminSectionNav />
           </Suspense>
         </div>
-      </footer>
-    </div>
+
+        <main className="mx-auto w-full max-w-8xl flex-1 px-6 py-10">{children}</main>
+
+        <footer className="border-t px-6 py-4">
+          <div className="mx-auto w-full max-w-8xl">
+            <Suspense fallback={<Skeleton className="h-4 w-72" />}>
+              <AdminFooter />
+            </Suspense>
+          </div>
+        </footer>
+      </div>
+      <ThemeSwitch />
+    </Providers>
   );
 }
 

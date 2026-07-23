@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       {/*
         Lenis smooth scrolling for the whole app — chrome, marketing, auth,
         admin, the public event templates, and every preview. Mounted once here
