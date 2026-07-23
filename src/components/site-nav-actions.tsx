@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ADMIN_PATH, DASHBOARD_PATH, HOME_PATH, LOGIN_PATH } from "@/config/routes";
 import { cn } from "@/lib/utils";
 import type { SessionUser } from "@/server/auth";
@@ -39,21 +40,21 @@ function getInitials(nameOrEmail: string): string {
   return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
 }
 
-/** The signed-in identity as an avatar chip, replacing a bare name/email string. */
-function UserChip({ user }: { user: SessionUser }) {
+/**
+ * The signed-in identity as a circular avatar button that opens the account
+ * info dropdown. The name lives in the menu's header row instead of the nav
+ * bar itself, so the trigger needs its own accessible name.
+ */
+function ProfileMenuTrigger({ user }: { user: SessionUser }) {
   const label = user.name || user.email;
 
   return (
-    <div className="flex items-center gap-1.5 rounded-full border bg-muted/40 py-1 pr-3 pl-1">
-      <span
-        aria-hidden="true"
-        className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
-      >
-        {getInitials(label)}
-      </span>
-      {/* Falls back to the email for Google accounts that supplied no name. */}
-      <span className="max-w-[14ch] truncate text-sm font-medium">{label}</span>
-    </div>
+    <DropdownMenuTrigger
+      aria-label={`Account menu for ${label}`}
+      className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border border-border/60 bg-primary text-[13px] font-semibold text-primary-foreground shadow-sm outline-none transition-all duration-200 ease-out hover:brightness-110 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 data-popup-open:ring-3 data-popup-open:ring-ring/40"
+    >
+      {getInitials(label)}
+    </DropdownMenuTrigger>
   );
 }
 
@@ -100,12 +101,34 @@ export function SiteNavLinks({ user }: { user: SessionUser | null }) {
   );
 }
 
-/** The right-side slot: the identity chip + sign-out, or the login/signup CTA. */
+/**
+ * The right-side slot: the avatar's account-info dropdown (name today, with
+ * room to grow — e.g. a future Settings entry — below it) next to a
+ * standalone Sign out button, or the login/signup CTA.
+ *
+ * Sign out deliberately stays outside the dropdown: it's the single most
+ * frequent action a signed-in user takes here, and burying it a click deep
+ * behind the avatar costs more than the dropdown gains in tidiness.
+ */
 export function SiteNavUser({ user }: { user: SessionUser | null }) {
   if (user) {
+    const label = user.name || user.email;
+
     return (
       <div className="flex items-center gap-2">
-        <UserChip user={user} />
+        <DropdownMenu>
+          <ProfileMenuTrigger user={user} />
+          <DropdownMenuContent align="end" sideOffset={10} className="w-56">
+            <div className="flex flex-col gap-0.5 px-1.5 py-1.5">
+              <span className="truncate text-sm font-medium text-foreground">{label}</span>
+              {/* Only shown when it differs from the label above — Google accounts
+                  with no name fall back to the email as the label itself. */}
+              {user.name ? (
+                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+              ) : null}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <SignOutButton />
       </div>
     );

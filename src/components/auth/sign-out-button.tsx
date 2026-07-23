@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { HOME_PATH } from "@/config/routes";
+import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
 
 /**
@@ -18,6 +19,10 @@ import { signOut } from "@/lib/auth-client";
  * in and no explanation. That is the worst possible failure for this particular
  * button — someone on a shared machine has every reason to believe they are
  * signed out when they are not.
+ *
+ * Lives in the nav bar itself, not the profile dropdown — sign-out is
+ * high-frequency and needs to be immediately visible, unlike a settled-later
+ * action such as Settings, which belongs behind the avatar.
  *
  * (Found for real: serving the app on a port other than the one in
  * `NEXT_PUBLIC_APP_URL` makes Better Auth reject every auth mutation as
@@ -53,18 +58,29 @@ export function SignOutButton() {
       {failed ? (
         // `role="alert"` so a screen reader announces it — the visual change is
         // small and easy to miss next to a button that still says "Sign out".
-        <span role="alert" className="text-xs font-medium text-destructive">
+        <span
+          role="alert"
+          className="rounded-full border border-destructive/20 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"
+        >
           Sign out failed
         </span>
       ) : null}
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         onClick={handleClick}
         disabled={pending}
-        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        className={cn(
+          "group/signout cursor-pointer rounded-full border-border/60 bg-background/60 text-muted-foreground shadow-sm transition-all duration-150 ease-out",
+          "hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive hover:shadow-lg hover:shadow-destructive/15",
+          failed && "border-destructive/30 text-destructive",
+        )}
       >
-        {pending ? <Spinner /> : <LogOut />}
+        {pending ? (
+          <Spinner />
+        ) : (
+          <LogOut className="transition-transform duration-150 ease-out group-hover/signout:translate-x-0.5" />
+        )}
         {pending ? "Signing out…" : failed ? "Try again" : "Sign out"}
       </Button>
     </div>
