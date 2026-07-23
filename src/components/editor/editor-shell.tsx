@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RefreshCw, TriangleAlert } from "lucide-react";
 
 import { AboutSection } from "@/components/editor/sections/about-section";
@@ -13,6 +14,7 @@ import { SpeakersSection } from "@/components/editor/sections/speakers-section";
 import { SponsorsSection } from "@/components/editor/sections/sponsors-section";
 import { TeamSection } from "@/components/editor/sections/team-section";
 import { VenueSection } from "@/components/editor/sections/venue-section";
+import { DRAFT_SAVED_EVENT } from "@/components/editor/use-autosave";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -60,6 +62,57 @@ export function EditorShell({
    */
   const [conflicted, setConflicted] = useState(false);
   const onConflict = useCallback(() => setConflicted(true), []);
+
+  const router = useRouter();
+
+  /**
+   * React to every successful autosave (`DRAFT_SAVED_EVENT`) from any section.
+   *
+   * Two jobs the individual sections can't do:
+   *
+   *   1. **Keep the publish panel honest (task 7.1).** Its completeness is
+   *      computed on the server at page load and the editor deliberately does
+   *      not `revalidatePath` on autosave (that would invalidate the public
+   *      site's cache on every keystroke). A client `router.refresh()` re-runs
+   *      the page's server components — recomputing completeness — while
+   *      preserving every form's state, so "Add the venue name" clears the
+   *      moment the venue name is actually saved. Debounced so continuous
+   *      typing (a save every ~1.5s) refreshes once it settles, not each time.
+   *
+   *   2. **Warn the other tabs (BR concurrent-edit).** Last-write-wins means a
+   *      stale tab can overwrite a field it never changed. The tab that *saves*
+   *      already learns of a conflict from the save result; the *victim* tab —
+   *      the one still showing the value you typed — learns nothing. Announcing
+   *      each save on a per-event `BroadcastChannel` lets every other open tab
+   *      raise the same "edited somewhere else" banner immediately, so the
+   *      overwrite can no longer happen silently.
+   */
+  useEffect(() => {
+    const channel =
+      typeof BroadcastChannel === "undefined"
+        ? null
+        : new BroadcastChannel(`tedxplore-draft-${eventId}`);
+
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const onLocalSave = () => {
+      channel?.postMessage("saved");
+      if (refreshTimer !== null) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => router.refresh(), 800);
+    };
+
+    // A message only ever arrives from *another* tab (BroadcastChannel never
+    // echoes to the sender), so its presence is itself the concurrent edit.
+    if (channel) channel.onmessage = () => setConflicted(true);
+
+    window.addEventListener(DRAFT_SAVED_EVENT, onLocalSave);
+
+    return () => {
+      window.removeEventListener(DRAFT_SAVED_EVENT, onLocalSave);
+      if (refreshTimer !== null) clearTimeout(refreshTimer);
+      channel?.close();
+    };
+  }, [eventId, router]);
 
   const activeSection = useActiveSection();
 

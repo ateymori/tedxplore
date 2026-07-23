@@ -44,6 +44,17 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 const DEBOUNCE_MS = 1500;
 
 /**
+ * Fired on `window` after any section autosave succeeds.
+ *
+ * The editor shell listens for it to do two things a section can't do alone:
+ * refresh the server-computed publish panel (so completeness stops being stale
+ * the moment content is saved) and tell other tabs on the same event that the
+ * draft moved. A bare window event keeps this hook ignorant of routing and of
+ * the event id — it only reports that *a* save landed.
+ */
+export const DRAFT_SAVED_EVENT = "tedxplore:draft-saved";
+
+/**
  * A failed save retries once, automatically, after this long.
  *
  * One retry, not an escalating chain: the overwhelmingly common cause is a
@@ -219,6 +230,13 @@ export function useAutosave<T extends FieldValues, TContext, TTransformed extend
     form.reset(sent, { keepValues: true, keepErrors: true });
 
     if (result.value.conflicted) onConflictRef.current?.();
+
+    // Tell the editor shell a save landed (refresh the publish panel; notify
+    // other tabs). Fired here, not on `conflicted`, because even a clean save
+    // changes what the completeness gate would see.
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(DRAFT_SAVED_EVENT));
+    }
 
     // No need to ask whether they kept typing: `isDirty` was just recomputed
     // against the new defaults, and the derived status reads "unsaved" on its
