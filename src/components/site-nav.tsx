@@ -53,9 +53,12 @@ export { SiteNavLinks, SiteNavUser };
 export function SiteNavShell({
   navLinks,
   userActions,
+  overlay = false,
 }: {
   navLinks: React.ReactNode;
   userActions: React.ReactNode;
+  /** See `FloatingNavBar`'s `overlay` prop — floats the bar over the page below it instead of reserving space in flow. */
+  overlay?: boolean;
 }) {
   return (
     <FloatingNavBar
@@ -69,6 +72,7 @@ export function SiteNavShell({
       }
       navItems={navLinks}
       actions={userActions}
+      overlay={overlay}
     />
   );
 }

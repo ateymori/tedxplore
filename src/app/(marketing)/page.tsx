@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
+import { HomepageHero } from "@/components/marketing/homepage-hero";
 import {
   TemplateCard,
   TemplateEditButton,
@@ -65,23 +66,14 @@ export default function Home() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <section className="mx-auto w-full max-w-8xl px-6 pt-20 pb-16 sm:pt-28">
-        <h1 className="max-w-6xl text-4xl font-bold leading-[1.15] tracking-tight text-balance sm:text-5xl">
-          Premium TEDx event websites. Generated from your own content!
-        </h1>
-        <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Add your speakers, venue, sponsors, and event details. {SITE_NAME} renders a designed,
-          animated, responsive site — no layout, no CSS, no templates to wrestle with.
-        </p>
-      </section>
+      <HomepageHero />
 
       <section aria-labelledby="templates-heading" className="mx-auto w-full max-w-8xl px-6 pb-24">
         <h2 id="templates-heading" className="text-2xl font-semibold tracking-tight">
-          Choose a template
+          Choose your template
         </h2>
         <p className="mt-2 text-muted-foreground">
-          Preview the real thing before you sign up — every preview is a live site rendered by the
-          same code your event will use.
+          Preview every template as a fully functional live website.
         </p>
 
         {/*

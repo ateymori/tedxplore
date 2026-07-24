@@ -24,15 +24,24 @@ import { Menu, X } from "lucide-react";
  * for desktop, once inside the mobile panel — so both must be safe to mount
  * twice; the session lookups they wrap are request-cached, so this costs no
  * extra query and the mobile copies only ever mount once the panel opens.
+ *
+ * `overlay` swaps the outer wrapper from `sticky` to `fixed`: `sticky` still
+ * reserves its own box in the document flow at its static position, which is
+ * exactly right for a normal content page (dashboard, admin) but leaves a gap
+ * above anything that wants to render edge-to-edge, like a full-bleed hero.
+ * `fixed` removes it from flow entirely so the page underneath can start at
+ * true `y: 0`, while `z-40` still keeps the bar painted above that content.
  */
 export function FloatingNavBar({
   brand,
   navItems,
   actions,
+  overlay = false,
 }: {
   brand: React.ReactNode;
   navItems: React.ReactNode;
   actions: React.ReactNode;
+  overlay?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -45,7 +54,7 @@ export function FloatingNavBar({
   }, []);
 
   return (
-    <div className="sticky top-4 z-40 px-4 sm:px-6">
+    <div className={`${overlay ? "fixed inset-x-0" : "sticky"} top-4 z-40 px-4 sm:px-6`}>
       <div className="mx-auto w-full max-w-8xl">
         <motion.div
           initial={{ opacity: 0, y: -6 }}

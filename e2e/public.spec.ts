@@ -13,11 +13,11 @@ test.describe("homepage and live preview", () => {
 
     await expect(
       page.getByRole("heading", {
-        name: /Premium TEDx event websites, generated from your content/i,
+        name: /Premium TEDx event websites\.?\s*Built from your content/i,
       }),
     ).toBeVisible();
 
-    await expect(page.getByRole("heading", { name: "Choose a template" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Choose your template" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Aurora" })).toBeVisible();
   });
 

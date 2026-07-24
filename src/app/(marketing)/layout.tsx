@@ -41,6 +41,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     <Providers>
       <div className={`${appFontClassName} flex min-h-full flex-1 flex-col`}>
         <SiteNavShell
+          overlay
           navLinks={
             <Suspense fallback={<SiteNavLinksSkeleton />}>
               <MarketingNavLinks />
