@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useEffect, useState } from "react";
 import { NeuroNoise } from "@paper-design/shaders-react";
+import StaggeredText from "@/components/react-bits/staggered-text";
 
 function useIsDark() {
   const [isDark, setIsDark] = useState(true);
@@ -44,16 +45,6 @@ const item: Variants = {
     opacity: 1,
     y: 0,
     transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-  },
-};
-
-const headline: Variants = {
-  hidden: { opacity: 0, y: 26, filter: "blur(10px)" },
-  show: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
@@ -127,14 +118,24 @@ export function HomepageHero() {
           viewport={{ once: true, margin: "-80px" }}
           className="flex max-w-2xl flex-col items-start text-left lg:max-w-none"
         >
-          <motion.h1
-            variants={headline}
+          {/*
+            The container above still orchestrates the subtitle/button
+            stagger via framer-motion `variants`, but StaggeredText manages
+            its own reveal (per-word, via its own IntersectionObserver) — it
+            isn't part of that variants tree. `rootMargin` is set to match
+            the container's `viewport.margin` so the headline and the rest
+            of the hero trigger at roughly the same scroll position.
+          */}
+          <StaggeredText
+            as="h1"
+            text="Premium TEDx event websites.|Built from your content."
+            separator="|"
+            direction="bottom"
+            duration={1.0}
+            delay={40}
+            rootMargin="-80px"
             className="max-w-6xl text-4xl font-bold leading-[1.19] tracking-tight text-balance text-neutral-950 dark:text-white sm:text-6xl md:text-[2.75rem] lg:text-6xl"
-          >
-            Premium TEDx event websites.
-            <br />
-            Built from your content.
-          </motion.h1>
+          />
 
           <motion.p
             variants={item}
