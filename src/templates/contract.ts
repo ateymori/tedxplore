@@ -128,19 +128,46 @@ export interface TemplateDefinition {
   name: string;
   description: string;
   /**
-   * The template's own card artwork for the homepage gallery (FR-49).
+   * Fallback card artwork for the homepage gallery (FR-49), used only when
+   * `previewThumbnailSrc` is absent.
    *
-   * A component rather than a path to a screenshot. A screenshot is a copy of
-   * the template that no test can keep honest: change the palette and the
-   * gallery goes on advertising last month's design until somebody notices by
-   * eye. Artwork drawn with the template's own tokens cannot drift, ships no
-   * asset, and means adding Template 2 still requires nothing but a directory
-   * and a registry entry (NFR-6).
+   * A component rather than a path to a screenshot, for a template that has no
+   * captured imagery yet. A screenshot is a copy of the template that no test
+   * can keep honest: change the palette and the gallery goes on advertising
+   * last month's design until somebody notices by eye. Artwork drawn with the
+   * template's own tokens cannot drift, ships no asset, and means a brand-new
+   * Template N can appear the moment it's registered, before anyone has
+   * recorded it.
    *
    * Decorative by contract — the card renders `name` and `description` as text
    * beside it, so the poster must not be the only place information appears.
    */
   Poster: ComponentType;
+
+  /**
+   * A real screenshot of the template's own Live Preview, shown at rest in
+   * place of `Poster` whenever a template has one.
+   *
+   * Chosen over `Poster` deliberately: a captured hero reads as an actual
+   * product screenshot rather than an abstract palette swatch, and it has to
+   * cross-fade convincingly into `previewAnimationSrc` on hover — a drawn
+   * poster and a recorded clip of the same page don't line up pixel-for-pixel.
+   * Can drift like `previewAnimationSrc` below, for the same reason. Optional
+   * so a template can ship with just `Poster` before anyone has captured it.
+   */
+  previewThumbnailSrc?: string;
+
+  /**
+   * A short looping clip of the real site, shown in place of the thumbnail on
+   * gallery-card hover.
+   *
+   * Unlike `Poster`, this genuinely is a captured recording and can drift —
+   * accepted deliberately, because there is no token-based way to *show
+   * motion through the real content* the way `Poster` shows palette and type.
+   * Optional so a template can ship without one (falls back to a static
+   * thumbnail/poster with no hover swap) until its recording exists.
+   */
+  previewAnimationSrc?: string;
 
   /**
    * The event name the Live Preview demo site shows (FR-50).

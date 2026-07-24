@@ -24,6 +24,11 @@ const aurora: TemplateDefinition = {
   demoSeed: auroraDemoSeed,
   Renderer: AuroraRenderer,
   Poster: AuroraPoster,
+  // Placeholders, both captured from this template's own Live Preview: a
+  // settled hero screenshot and a slow eased scroll through it. Standing in
+  // until Mohammad supplies the final thumbnail/recording at these same paths.
+  previewThumbnailSrc: "/templates/aurora/preview-thumbnail.jpg",
+  previewAnimationSrc: "/templates/aurora/preview-animated.gif",
 };
 
 const TEMPLATES = [aurora] as const;

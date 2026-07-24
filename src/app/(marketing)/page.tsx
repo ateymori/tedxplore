@@ -69,10 +69,10 @@ export default function Home() {
       <HomepageHero />
 
       <section aria-labelledby="templates-heading" className="mx-auto w-full max-w-8xl px-6 pb-24">
-        <h2 id="templates-heading" className="text-2xl font-semibold tracking-tight">
+        <h2 id="templates-heading" className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Choose your template
         </h2>
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-2 text-lg text-muted-foreground sm:text-xl">
           Preview every template as a fully functional live website.
         </p>
 
