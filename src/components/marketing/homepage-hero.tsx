@@ -84,7 +84,7 @@ export function HomepageHero() {
       };
 
   return (
-    <section className="relative flex min-h-screen w-full items-start overflow-hidden bg-white px-4 py-16 dark:bg-neutral-950 sm:px-6 sm:py-20 lg:items-center lg:px-8">
+    <section className="relative flex min-h-screen w-full items-start overflow-hidden bg-white px-4 pt-40 pb-16 dark:bg-neutral-950 sm:px-6 sm:py-20 md:pt-40 lg:items-center lg:px-8 lg:pt-20">
       <NeuroNoise
         key={isDark ? "dark" : "light"}
         className="absolute inset-0 h-full w-full"
@@ -112,7 +112,14 @@ export function HomepageHero() {
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_60%,rgba(255,255,255,0.9))] dark:bg-[linear-gradient(to_bottom,rgba(10,10,10,0)_60%,rgba(10,10,10,0.9))]"
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1400px] -translate-y-20">
+      {/*
+        The upward nudge only makes sense with `lg:items-center` above: it
+        pulls the vertically-centered desktop layout up for visual balance.
+        Below `lg` the section is `items-start` with its own top padding, so
+        the same translate would pull content up into (and, combined with
+        `overflow-hidden`, sometimes entirely behind) the floating nav bar.
+      */}
+      <div className="relative z-10 mx-auto w-full max-w-[1400px] lg:-translate-y-20">
         <motion.div
           variants={container}
           initial="hidden"
@@ -122,7 +129,7 @@ export function HomepageHero() {
         >
           <motion.h1
             variants={headline}
-            className="max-w-6xl text-4xl font-bold leading-[1.19] tracking-tight text-balance text-neutral-950 dark:text-white sm:text-6xl"
+            className="max-w-6xl text-4xl font-bold leading-[1.19] tracking-tight text-balance text-neutral-950 dark:text-white sm:text-6xl md:text-[2.75rem] lg:text-6xl"
           >
             Premium TEDx event websites.
             <br />
@@ -131,14 +138,14 @@ export function HomepageHero() {
 
           <motion.p
             variants={item}
-            className="mt-6 max-w-4xl text-2xl text-neutral-600 dark:text-neutral-300 lg:max-w-none lg:whitespace-nowrap"
+            className="mt-6 max-w-4xl text-xl text-neutral-600 dark:text-neutral-300 md:max-w-none md:whitespace-nowrap lg:max-w-none lg:text-2xl lg:whitespace-nowrap"
           >
             Choose a stunning template, add your event details, and launch!
           </motion.p>
 
           <motion.div
             variants={item}
-            className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row"
+            className="mt-20 flex w-full flex-col gap-3 sm:mt-10 sm:w-auto sm:flex-row"
           >
             <a
               href="#templates-heading"

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home, LayoutDashboard, ShieldCheck, type LucideIcon } from "lucide-react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useNavVariant } from "@/components/floating-nav-bar";
 import { ADMIN_PATH, DASHBOARD_PATH, HOME_PATH, LOGIN_PATH } from "@/config/routes";
 import { cn } from "@/lib/utils";
 import type { SessionUser } from "@/server/auth";
@@ -29,6 +31,41 @@ function linkClassName(active: boolean): string {
     active
       ? "bg-primary font-medium text-primary-foreground"
       : "text-muted-foreground hover:bg-muted hover:text-foreground",
+  );
+}
+
+/**
+ * A single row in the mobile drawer's nav-links section: full-width, icon
+ * plus label, and a larger touch target than the compact desktop chip
+ * (`linkClassName`) — the two variants share behavior (active-state
+ * detection) but not markup, so each gets its own small renderer instead of
+ * one component trying to look right at both sizes.
+ */
+function MobileNavLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex items-center gap-3 rounded-xl px-3.5 py-3 text-[15px] font-medium transition-colors",
+        active
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "text-foreground hover:bg-muted",
+      )}
+    >
+      <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+      {label}
+    </Link>
   );
 }
 
@@ -69,6 +106,36 @@ function ProfileMenuTrigger({ user }: { user: SessionUser }) {
  */
 export function SiteNavLinks({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
+  const variant = useNavVariant();
+
+  if (variant === "mobile") {
+    return (
+      <div className="flex flex-col gap-1">
+        <MobileNavLink
+          href={HOME_PATH}
+          label="Home"
+          icon={Home}
+          active={isActiveLink(pathname, HOME_PATH)}
+        />
+        {user?.role === "ADMIN" ? (
+          <MobileNavLink
+            href={ADMIN_PATH}
+            label="Admin"
+            icon={ShieldCheck}
+            active={isActiveLink(pathname, ADMIN_PATH)}
+          />
+        ) : null}
+        {user ? (
+          <MobileNavLink
+            href={DASHBOARD_PATH}
+            label="Dashboard"
+            icon={LayoutDashboard}
+            active={isActiveLink(pathname, DASHBOARD_PATH)}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-1">
@@ -111,6 +178,44 @@ export function SiteNavLinks({ user }: { user: SessionUser | null }) {
  * behind the avatar costs more than the dropdown gains in tidiness.
  */
 export function SiteNavUser({ user }: { user: SessionUser | null }) {
+  const variant = useNavVariant();
+
+  if (variant === "mobile") {
+    if (user) {
+      const label = user.name || user.email;
+
+      // The drawer is already a menu the user opened, so a dropdown nested
+      // inside it would be a menu-inside-a-menu for no reason — the identity
+      // is shown directly instead, as its own full-width row.
+      return (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 rounded-xl bg-muted/60 px-3.5 py-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+              {getInitials(label)}
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-medium text-foreground">{label}</span>
+              {user.name ? (
+                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+              ) : null}
+            </div>
+          </div>
+          <SignOutButton className="w-full" buttonClassName="h-11 w-full justify-center rounded-xl text-[15px]" />
+        </div>
+      );
+    }
+
+    return (
+      <Button
+        nativeButton={false}
+        render={<Link href={LOGIN_PATH} />}
+        className="h-11 w-full justify-center rounded-xl text-[15px]"
+      >
+        Log In / Sign Up
+      </Button>
+    );
+  }
+
   if (user) {
     const label = user.name || user.email;
 

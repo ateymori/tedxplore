@@ -28,7 +28,15 @@ import { signOut } from "@/lib/auth-client";
  * `NEXT_PUBLIC_APP_URL` makes Better Auth reject every auth mutation as
  * `INVALID_ORIGIN`, and this button reported success anyway.)
  */
-export function SignOutButton() {
+export function SignOutButton({
+  className,
+  buttonClassName,
+}: {
+  /** Merged onto the outer wrapper — e.g. `"w-full"` for a full-width row. */
+  className?: string;
+  /** Merged onto the `Button` itself, overriding the default size/shape. */
+  buttonClassName?: string;
+} = {}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -54,7 +62,7 @@ export function SignOutButton() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn("flex items-center gap-2", className)}>
       {failed ? (
         // `role="alert"` so a screen reader announces it — the visual change is
         // small and easy to miss next to a button that still says "Sign out".
@@ -74,6 +82,7 @@ export function SignOutButton() {
           "group/signout h-9 cursor-pointer rounded-sm border-border/60 bg-background/60 text-muted-foreground shadow-sm transition-all duration-150 ease-out",
           "hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive hover:shadow-lg hover:shadow-destructive/15",
           failed && "border-destructive/30 text-destructive",
+          buttonClassName,
         )}
       >
         {pending ? (
